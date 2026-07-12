@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>آمار قزاق‌های ایران</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<script>
+tailwind.config={theme:{extend:{fontFamily:{vazir:['Vazirmatn','sans-serif']},colors:{
+bg:'#0d1117',card:'#161b22',border:'#30363d',
+gold:'#d4a843',goldDark:'#b8922e',goldLight:'#e8c86a',
+teal:'#2ea58e',tealDark:'#238470',
+text:'#e6edf3',muted:'#8b949e',danger:'#da3633',success:'#2ea58e'
+}}}}
+</script>
+<style>
+*{font-family:'Vazirmatn',sans-serif;box-sizing:border-box}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:#0d1117}::-webkit-scrollbar-thumb{background:#30363d;border-radius:3px}
+body{background:#0d1117;color:#e6edf3;margin:0;min-height:100vh;overflow-x:hidden}
+.view{display:none;animation:fadeIn .4s ease}.view.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideIn{from{opacity:0;transform:translateX(30px)}to{opacity:1;transform:translateX(0)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.btn-gold{background:linear-gradient(135deg,#d4a843,#b8922e);color:#0d1117;font-weight:700;border:none;padding:10px 28px;border-radius:10px;cursor:pointer;transition:all .25s;font-size:15px}
+.btn-gold:hover{background:linear-gradient(135deg,#e8c86a,#d4a843);transform:translateY(-1px);box-shadow:0 4px 20px rgba(212,168,67,.35)}
+.btn-gold:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-outline{background:transparent;color:#d4a843;border:1.5px solid #d4a843;padding:10px 28px;border-radius:10px;cursor:pointer;transition:all .25s;font-weight:600;font-size:15px}
+.btn-outline:hover{background:rgba(212,168,67,.1)}
+.btn-danger{background:linear-gradient(135deg,#da3633,#b62324);color:#fff;font-weight:600;border:none;padding:8px 20px;border-radius:8px;cursor:pointer;transition:all .25s;font-size:14px}
+.btn-danger:hover{opacity:.9}
+.btn-sm{padding:6px 16px;font-size:13px;border-radius:6px}
+.input-field{background:#0d1117;border:1.5px solid #30363d;color:#e6edf3;padding:10px 14px;border-radius:8px;width:100%;font-size:15px;transition:border-color .2s;outline:none;font-family:'Vazirmatn'}
+.input-field:focus{border-color:#d4a843}.input-field::placeholder{color:#484f58}
+select.input-field{cursor:pointer;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b949e' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:left 12px center}
+select.input-field option{background:#161b22;color:#e6edf3}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;border:1.5px solid #30363d;cursor:pointer;transition:all .2s;font-size:13px;font-weight:500;user-select:none}
+.chip:hover{border-color:#484f58;background:#1c2333}.chip.selected{border-color:#d4a843;background:rgba(212,168,67,.12);color:#e8c86a}
+.card{background:#161b22;border:1px solid #30363d;border-radius:12px;padding:20px;transition:all .3s}
+.toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:10px;font-size:14px;font-weight:500;z-index:9999;animation:slideIn .3s ease;max-width:90vw;text-align:center}
+.toast-success{background:#1a3a2a;border:1px solid #2ea58e;color:#2ea58e}
+.toast-error{background:#3a1a1a;border:1px solid #da3633;color:#da3633}
+.toast-info{background:#1a2a3a;border:1px solid #58a6ff;color:#58a6ff}
+.tab-btn{padding:10px 18px;border-radius:8px 8px 0 0;cursor:pointer;font-weight:600;font-size:14px;transition:all .2s;border:1px solid transparent;border-bottom:none;color:#8b949e;background:transparent}
+.tab-btn.active{color:#d4a843;background:#161b22;border-color:#30363d}
+.tab-btn:hover:not(.active){color:#e6edf3}
+.table-container{overflow-x:auto;border-radius:10px;border:1px solid #30363d}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#1c2333;padding:10px 12px;text-align:right;font-weight:600;color:#d4a843;border-bottom:1px solid #30363d;white-space:nowrap}
+td{padding:8px 12px;border-bottom:1px solid #21262d;white-space:nowrap}tr:hover td{background:#1c2333}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;display:flex;align-items:center;justify-content:center;animation:fadeIn .2s}
+.modal{background:#161b22;border:1px solid #30363d;border-radius:14px;padding:24px;max-height:85vh;overflow-y:auto;animation:fadeIn .3s;max-width:560px;width:92%}
+.ornament{position:absolute;width:300px;height:300px;border-radius:50%;filter:blur(100px);opacity:.08;pointer-events:none}
+.badge{display:inline-block;padding:2px 10px;border-radius:12px;font-size:11px;font-weight:600}
+.badge-gold{background:rgba(212,168,67,.15);color:#d4a843}
+.badge-teal{background:rgba(46,165,142,.15);color:#2ea58e}
+.badge-danger{background:rgba(218,54,51,.15);color:#da3633}
+.radio-card{border:1.5px solid #30363d;border-radius:10px;padding:12px 16px;cursor:pointer;transition:all .2s;display:flex;align-items:center;gap:10px}
+.radio-card:hover{border-color:#484f58}.radio-card.selected{border-color:#d4a843;background:rgba(212,168,67,.08)}
+.radio-card .dot{width:18px;height:18px;border-radius:50%;border:2px solid #484f58;transition:all .2s;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.radio-card.selected .dot{border-color:#d4a843}.radio-card.selected .dot::after{content:'';width:8px;height:8px;border-radius:50%;background:#d4a843}
+.stat-card{background:linear-gradient(135deg,#161b22,#1c2333);border:1px solid #30363d;border-radius:12px;padding:20px;text-align:center}
+.stat-card .num{font-size:32px;font-weight:900;color:#d4a843;line-height:1.2}
+.stat-card .label{font-size:13px;color:#8b949e;margin-top:4px}
+.otp-code-display{background:linear-gradient(135deg,#1a3a2a,#0d2818);border:2px solid #2ea58e;border-radius:16px;padding:20px 32px;display:inline-block;letter-spacing:12px;font-size:40px;font-weight:900;color:#2ea58e;direction:ltr;text-align:center;user-select:all;cursor:pointer}
+.info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #21262d}.info-row:last-child{border-bottom:none}
+.info-label{color:#8b949e;font-size:13px}.info-value{font-weight:600;font-size:13px}
+.list-section{border:1px solid #30363d;border-radius:12px;padding:16px 20px;margin-bottom:16px;background:#161b22}
+.list-section h4{color:#d4a843;font-weight:700;font-size:14px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.list-item{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:16px;border:1px solid #30363d;font-size:12px;font-weight:500;margin:0 4px 6px 0;background:#0d1117}
+.list-item .del-btn{cursor:pointer;opacity:.5;transition:opacity .2s;color:#da3633}.list-item .del-btn:hover{opacity:1}
+.list-item .edit-btn{cursor:pointer;opacity:.5;transition:opacity .2s;color:#58a6ff}.list-item .edit-btn:hover{opacity:1}
+.spinner{width:36px;height:36px;border-radius:50%;border:3px solid #30363d;border-top-color:#d4a843;animation:spin .8s linear infinite}
+#loadingOverlay{position:fixed;inset:0;background:rgba(13,17,23,.75);z-index:9998;display:none;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+#loadingOverlay.active{display:flex}
+#loadingOverlay .msg{color:#8b949e;font-size:13px}
+#configWarning{position:fixed;bottom:0;right:0;left:0;background:#3a1a1a;border-top:1px solid #da3633;color:#f5a3a1;padding:10px 16px;font-size:12px;text-align:center;z-index:9997;display:none}
+@media(max-width:640px){.stat-card .num{font-size:24px}.btn-gold,.btn-outline{padding:8px 20px;font-size:14px}.modal{padding:16px;width:96%}.otp-code-display{font-size:28px;letter-spacing:8px;padding:16px 24px}}
+</style>
+</head>
+<body>
+
+<div id="loadingOverlay"><div class="spinner"></div><div class="msg" id="loadingMsg">در حال ارتباط با سرور...</div></div>
+<div id="configWarning"><i class="fas fa-triangle-exclamation ml-1"></i>آدرس API تنظیم نشده است. در ابتدای کد، مقدار CONFIG.API_URL را با آدرس Web App اپس‌اسکریپت خود جایگزین کنید.</div>
+
+<nav id="topNav" class="fixed top-0 right-0 left-0 z-50 bg-bg/90 backdrop-blur-md border-b border-border" style="display:none">
+  <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
+    <div class="flex items-center gap-3 cursor-pointer" onclick="navigateTo('landing')">
+      <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-gold to-goldDark flex items-center justify-center"><i class="fas fa-chart-pie text-bg text-sm"></i></div>
+      <span class="font-bold text-gold text-sm">آمار قزاق‌های ایران</span>
+    </div>
+    <div id="navLinks" class="flex items-center gap-2"></div>
+  </div>
+</nav>
+
+<!-- صفحه اصلی -->
+<div id="view-landing" class="view active">
+  <div class="min-h-screen flex items-center justify-center relative overflow-hidden px-4">
+    <div class="ornament bg-gold" style="top:-100px;right:-100px"></div>
+    <div class="ornament bg-teal" style="bottom:-100px;left:-100px"></div>
+    <div class="text-center max-w-lg relative z-10">
+      <div class="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-gold to-goldDark flex items-center justify-center" style="animation:float 3s ease-in-out infinite"><i class="fas fa-users text-bg text-3xl"></i></div>
+      <h1 class="text-3xl sm:text-4xl font-black text-text mb-3">آمار قزاق‌های ایران</h1>
+      <p class="text-muted text-sm mb-8 leading-7">جمع‌آوری اطلاعات و ارائه تحلیل آماری و توصیفی از قزاق‌های ساکن ایران</p>
+      <div class="flex flex-col gap-3 max-w-xs mx-auto">
+        <button class="btn-gold text-base px-8 py-3" onclick="navigateTo('phone')"><i class="fas fa-user-plus ml-2"></i>ثبت‌نام جدید</button>
+        <button class="btn-outline text-base px-8 py-3" onclick="navigateTo('user-login')"><i class="fas fa-sign-in-alt ml-2"></i>ورود کاربران ثبت‌نام شده</button>
+        <button class="btn-outline text-base px-8 py-3" style="border-color:#30363d;color:#8b949e" onclick="navigateTo('admin-login')"><i class="fas fa-lock ml-2"></i>ورود ادمین</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ورود کاربر قبلی -->
+<div id="view-user-login" class="view">
+  <div class="min-h-screen flex items-center justify-center px-4 pt-14">
+    <div class="card max-w-md w-full">
+      <div class="text-center mb-6">
+        <div class="w-14 h-14 mx-auto mb-4 rounded-xl bg-teal/10 flex items-center justify-center"><i class="fas fa-sign-in-alt text-teal text-2xl"></i></div>
+        <h2 class="text-xl font-bold mb-1">ورود کاربران</h2>
+        <p class="text-muted text-sm">شماره موبایلی که با آن ثبت‌نام کردید را وارد کنید</p>
+      </div>
+      <div class="mb-5 p-4 rounded-xl bg-gold/5 border border-gold/20">
+        <p class="text-gold text-xs font-bold mb-2"><i class="fas fa-info-circle ml-1"></i>راهنمای ورود در موارد خاص</p>
+        <p class="text-muted text-xs leading-6">اگر سرپرست خانوار شما، اطلاعات شما را ثبت کرده اما شماره موبایلی وارد نکرده است، از گزینه «ثبت‌نام جدید» در صفحه قبل استفاده کنید. با وارد کردن <span class="text-gold font-bold">کد ملی</span> خود، حساب کاربری شما شناسایی شده و می‌توانید اطلاعات خود را تکمیل و ویرایش نمایید.</p>
+      </div>
+      <div class="space-y-4">
+        <div><label class="block text-sm font-medium mb-1.5 text-muted">شماره موبایل</label><input id="loginPhone" type="tel" maxlength="11" class="input-field" placeholder="09xxxxxxxxx" inputmode="numeric"></div>
+        <button class="btn-gold w-full" onclick="sendLoginOTP()"><i class="fas fa-paper-plane ml-2"></i>ارسال کد تأیید</button>
+        <button class="btn-outline w-full text-sm" onclick="navigateTo('landing')"><i class="fas fa-arrow-right ml-1"></i>بازگشت</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ثبت‌نام شماره -->
+<div id="view-phone" class="view">
+  <div class="min-h-screen flex items-center justify-center px-4 pt-14">
+    <div class="card max-w-md w-full">
+      <div class="text-center mb-6">
+        <div class="w-14 h-14 mx-auto mb-4 rounded-xl bg-gold/10 flex items-center justify-center"><i class="fas fa-mobile-screen-button text-gold text-2xl"></i></div>
+        <h2 class="text-xl font-bold mb-1">ثبت‌نام جدید</h2>
+        <p class="text-muted text-sm">شماره موبایل و کد ملی خود را وارد کنید</p>
+      </div>
+      <div class="space-y-4">
+        <div><label class="block text-sm font-medium mb-1.5 text-muted">کد ملی</label><input id="regNationalId" type="text" maxlength="10" class="input-field" placeholder="کد ملی ۱۰ رقمی" inputmode="numeric"></div>
+        <div><label class="block text-sm font-medium mb-1.5 text-muted">شماره موبایل</label><input id="regPhone" type="tel" maxlength="11" class="input-field" placeholder="09xxxxxxxxx" inputmode="numeric"></div>
+        <button class="btn-gold w-full" onclick="sendOTP()"><i class="fas fa-paper-plane ml-2"></i>ارسال کد تأیید</button>
+        <button class="btn-outline w-full text-sm" onclick="navigateTo('landing')"><i class="fas fa-arrow-right ml-1"></i>بازگشت</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- OTP -->
+<div id="view-otp" class="view">
+  <div class="min-h-screen flex items-center justify-center px-4 pt-14">
+    <div class="card max-w-md w-full text-center">
+      <div class="w-14 h-14 mx-auto mb-4 rounded-xl bg-teal/10 flex items-center justify-center"><i class="fas fa-message-code text-teal text-2xl"></i></div>
+      <h2 class="text-xl font-bold mb-1">کد تأیید</h2>
+      <div class="mb-5 p-4 rounded-xl bg-bg border border-border">
+        <p class="text-muted text-xs mb-2">کد تأیید شما (حالت آزمایشی — بدون پیامک واقعی):</p>
+        <div class="otp-code-display" id="otpCodeDisplay" onclick="copyOTP()">-----</div>
+        <p class="text-muted text-xs mt-2">کلیک = کپی</p>
+      </div>
+      <div class="flex justify-center gap-2 mb-5" dir="ltr" id="otpBoxes"></div>
+      <button class="btn-gold w-full" onclick="verifyOTP()"><i class="fas fa-check ml-2"></i>تأیید کد</button>
+      <div class="mt-4 flex items-center justify-center gap-4">
+        <p class="text-muted text-xs">ارسال مجدد تا <span id="otpTimer" class="text-gold font-bold">02:00</span></p>
+        <button id="resendBtn" class="text-gold text-xs font-bold underline cursor-pointer" style="display:none" onclick="resendOTP()">ارسال مجدد</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- سؤالات تأیید -->
+<div id="view-verify" class="view">
+  <div class="min-h-screen flex items-center justify-center px-4 pt-14">
+    <div class="card max-w-2xl w-full">
+      <div class="text-center mb-6">
+        <div class="w-14 h-14 mx-auto mb-4 rounded-xl bg-gold/10 flex items-center justify-center"><i class="fas fa-shield-check text-gold text-2xl"></i></div>
+        <h2 class="text-xl font-bold mb-1">تأیید هویت قزاق</h2><p class="text-muted text-sm">به ۳ سؤال پاسخ دهید</p>
+      </div>
+      <div id="verifyQuestions" class="space-y-6"></div>
+      <button class="btn-gold w-full mt-6" onclick="checkVerifyAnswers()"><i class="fas fa-check-double ml-2"></i>بررسی</button>
+    </div>
+  </div>
+</div>
+
+<!-- فرم ثبت اطلاعات -->
+<div id="view-register" class="view">
+  <div class="min-h-screen px-4 pt-20 pb-10">
+    <div class="max-w-3xl mx-auto">
+      <div class="text-center mb-8"><h2 class="text-2xl font-bold mb-1">ثبت اطلاعات فردی</h2><p class="text-muted text-sm">اطلاعات خود را با دقت وارد کنید</p></div>
+      <div id="registerFormContainer"></div>
+    </div>
+  </div>
+</div>
+
+<!-- داشبورد کاربر -->
+<div id="view-user-dashboard" class="view">
+  <div class="max-w-7xl mx-auto px-4 pt-20 pb-10">
+    <div class="text-center mb-8"><h2 class="text-2xl font-bold mb-1">داشبورد آماری</h2></div>
+    <div class="card max-w-2xl mx-auto mb-8" id="userProfileCard"></div>
+    <div id="userStatsRow" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8"></div>
+    <div id="userCharts" class="grid grid-cols-1 lg:grid-cols-2 gap-6"></div>
+  </div>
+</div>
+
+<!-- ویرایش پروفایل -->
+<div id="view-edit-profile" class="view">
+  <div class="min-h-screen px-4 pt-20 pb-10">
+    <div class="max-w-3xl mx-auto">
+      <div class="text-center mb-8"><h2 class="text-2xl font-bold mb-1">ویرایش اطلاعات</h2></div>
+      <div id="editProfileContainer"></div>
+    </div>
+  </div>
+</div>
+
+<!-- مدیریت خانوار -->
+<div id="view-family-manage" class="view">
+  <div class="max-w-3xl mx-auto px-4 pt-20 pb-10">
+    <div class="flex items-center justify-between mb-6">
+      <div><h2 class="text-xl font-bold">مدیریت اعضای خانوار</h2></div>
+      <button class="btn-gold btn-sm" onclick="addFamilyMember()"><i class="fas fa-plus ml-1"></i>افزودن عضو</button>
+    </div>
+    <div id="familyMembersList" class="space-y-3"></div>
+    <button class="btn-outline mt-6 text-sm" onclick="navigateTo('user-dashboard')"><i class="fas fa-arrow-right ml-1"></i>بازگشت</button>
+  </div>
+</div>
+
+<!-- ورود ادمین -->
+<div id="view-admin-login" class="view">
+  <div class="min-h-screen flex items-center justify-center px-4 pt-14">
+    <div class="card max-w-sm w-full text-center">
+      <div class="w-14 h-14 mx-auto mb-4 rounded-xl bg-gold/10 flex items-center justify-center"><i class="fas fa-user-shield text-gold text-2xl"></i></div>
+      <h2 class="text-xl font-bold mb-1">ورود ادمین</h2>
+      <p class="text-muted text-xs mb-4">با نام کاربری و رمز عبور ادمین وارد شوید</p>
+      <div class="space-y-4">
+        <input id="adminUser" class="input-field" placeholder="نام کاربری" dir="ltr">
+        <input id="adminPass" type="password" class="input-field" placeholder="رمز عبور" dir="ltr">
+        <button class="btn-gold w-full" onclick="adminLogin()"><i class="fas fa-sign-in-alt ml-2"></i>ورود</button>
+        <button class="btn-outline w-full text-sm" onclick="navigateTo('landing')"><i class="fas fa-arrow-right ml-1"></i>بازگشت</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- پنل ادمین -->
+<div id="view-admin" class="view">
+  <div class="max-w-7xl mx-auto px-4 pt-18 pb-10">
+    <div class="flex flex-wrap gap-1 border-b border-border mb-6" id="adminTabs"></div>
+    <div id="adminContent"></div>
+  </div>
+</div>
+
+<div id="modalOverlay" class="modal-overlay" style="display:none" onclick="if(event.target===this)closeModal()"><div class="modal" id="modalContent"></div></div>
+
+<script>
+// ============================================================================
+// تنظیمات — آدرس Web App اپس‌اسکریپت خود را اینجا جایگزین کنید
+// ============================================================================
+const CONFIG={
+  API_URL:'https://script.google.com/macros/s/AKfycbytxap1sObJTXolTFDfPXgMzIGJXIvKRxSWG5vgfCfsnDHc-NEJ5dAO97YNaOmdZhXW/exec' // مثال: https://script.google.com/macros/s/AKfycb.../exec
+};
+
+// ==================== وضعیت برنامه ====================
+let APP={currentView:'landing',tempPhone:'',tempNID:'',tempOTP:'',otpTimerInterval:null,otpPurpose:'register',
+  currentUser:null,currentAdmin:null,adminToken:null,
+  selectedGender:'',selectedFamilyHead:'',selectedEducation:'',selectedEmployment:'',
+  selectedCity:'',selectedTechSkills:[],selectedSportSkills:[],selectedSartaife:'',selectedTayefe:'',
+  selectedHeadNID:'',selectedHeadName:'',selectedIsAdai:'',achievements:'',
+  verifyQuestions:[],chartInstances:[],adminTab:'lists',
+  cache:null,bootstrapped:false,adminUsersCache:null};
+
+function genId(){return Date.now().toString(36)+Math.random().toString(36).substr(2,5)}
+function showToast(m,t='info'){const e=document.createElement('div');e.className='toast toast-'+t;e.textContent=m;document.body.appendChild(e);setTimeout(()=>{e.style.opacity='0';e.style.transition='opacity .3s';setTimeout(()=>e.remove(),300)},3500)}
+function showLoading(msg){document.getElementById('loadingMsg').textContent=msg||'در حال ارتباط با سرور...';document.getElementById('loadingOverlay').classList.add('active')}
+function hideLoading(){document.getElementById('loadingOverlay').classList.remove('active')}
+
+// ==================== ارتباط با API (اپس‌اسکریپت) ====================
+async function api(action,payload={}){
+  if(!CONFIG.API_URL||CONFIG.API_URL.indexOf('PUT_YOUR')===0){
+    document.getElementById('configWarning').style.display='block';
+    throw new Error('آدرس API تنظیم نشده است.');
+  }
+  const body=Object.assign({action},payload);
+  if(APP.adminToken) body.token=APP.adminToken;
+  let res;
+  try{
+    res=await fetch(CONFIG.API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)});
+  }catch(e){throw new Error('اتصال به سرور برقرار نشد. اتصال اینترنت خود را بررسی کنید.')}
+  let json;
+  try{json=await res.json()}catch(e){throw new Error('پاسخ سرور نامعتبر بود.')}
+  if(!json.ok){throw new Error(json.error||'خطای ناشناخته سرور')}
+  return json.data;
+}
+async function apiSafe(action,payload,loadingMsg){
+  showLoading(loadingMsg);
+  try{return await api(action,payload)}
+  catch(e){showToast(e.message,'error');throw e}
+  finally{hideLoading()}
+}
+
+async function ensureBootstrap(){
+  if(APP.bootstrapped) return;
+  const d=await apiSafe('bootstrap',{},'در حال بارگذاری فهرست‌های پایه...');
+  APP.cache=d;APP.bootstrapped=true;
+}
+function getEducations(){return (APP.cache&&APP.cache.educations)||[]}
+function getEmployments(){return (APP.cache&&APP.cache.employments)||[]}
+function getCities(){return (APP.cache&&APP.cache.cities)||[]}
+function getTechSkills(){return (APP.cache&&APP.cache.techSkills)||[]}
+function getSportSkills(){return (APP.cache&&APP.cache.sportSkills)||[]}
+function getSartaife(){return (APP.cache&&APP.cache.sartaife)||[]}
+function getTayefeMap(){return (APP.cache&&APP.cache.tayefeMap)||{}}
+
+// ==================== ناوبری ====================
+async function navigateTo(v){
+  APP.chartInstances.forEach(c=>{try{c.destroy()}catch(e){}});APP.chartInstances=[];
+  if(APP.otpTimerInterval){clearInterval(APP.otpTimerInterval);APP.otpTimerInterval=null}
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  const el=document.getElementById('view-'+v);if(el)el.classList.add('active');APP.currentView=v;
+  document.getElementById('topNav').style.display=['user-dashboard','edit-profile','family-manage','admin'].includes(v)?'block':'none';
+  updateNavLinks(v);
+  window.scrollTo(0,0);
+  try{
+    if(v==='otp')initOTPView();
+    if(v==='verify')await initVerifyView();
+    if(v==='register'){await ensureBootstrap();buildForm('register')}
+    if(v==='user-dashboard')await renderUserDashboard();
+    if(v==='edit-profile'){await ensureBootstrap();buildForm('edit')}
+    if(v==='family-manage')await renderFamilyManage();
+    if(v==='admin')await renderAdminPanel();
+  }catch(e){/* پیام خطا از طریق toast قبلاً نمایش داده شده */}
+}
+
+function updateNavLinks(v){
+  const c=document.getElementById('navLinks');
+  if(v==='user-dashboard'||v==='edit-profile'||v==='family-manage'){
+    const u=APP.currentUser;
+    c.innerHTML=`<span class="text-muted text-sm hidden sm:inline">${u?u.firstName+' '+u.lastName:''}</span>
+      <button class="btn-outline btn-sm" onclick="navigateTo('user-dashboard')"><i class="fas fa-chart-bar"></i></button>
+      ${u&&u.isFamilyHead?'<button class="btn-outline btn-sm" onclick="navigateTo(\'family-manage\')"><i class="fas fa-people-group"></i></button>':''}
+      <button class="btn-outline btn-sm" onclick="APP.currentUser=null;navigateTo('landing')"><i class="fas fa-sign-out-alt"></i></button>`;
+  }else if(v==='admin'){c.innerHTML=`<span class="text-muted text-sm">${APP.currentAdmin?APP.currentAdmin.name:''}</span><button class="btn-outline btn-sm" onclick="APP.currentAdmin=null;APP.adminToken=null;navigateTo('landing')">خروج</button>`}
+  else c.innerHTML='';
+}
+
+// ==================== OTP ====================
+async function sendOTP(){
+  const nid=document.getElementById('regNationalId').value.trim(),phone=document.getElementById('regPhone').value.trim();
+  if(!/^\d{10}$/.test(nid)){showToast('کد ملی باید ۱۰ رقم باشد','error');return}
+  if(!/^09\d{9}$/.test(phone)){showToast('شماره موبایل نامعتبر','error');return}
+  try{
+    const d=await apiSafe('startRegistration',{nationalId:nid,phone:phone},'در حال ارسال کد...');
+    APP.tempPhone=phone;APP.tempNID=nid;APP.otpPurpose=d.purpose;APP.tempOTP=d.otp;
+    showToast('کد تأیید ارسال شد','success');navigateTo('otp');
+  }catch(e){}
+}
+async function sendLoginOTP(){
+  const phone=document.getElementById('loginPhone').value.trim();
+  if(!/^09\d{9}$/.test(phone)){showToast('شماره موبایل نامعتبر','error');return}
+  try{
+    const d=await apiSafe('startLogin',{phone:phone},'در حال ارسال کد...');
+    APP.tempPhone=phone;APP.otpPurpose='login';APP.tempOTP=d.otp;
+    showToast('کد تأیید ارسال شد','success');navigateTo('otp');
+  }catch(e){}
+}
+async function resendOTP(){
+  try{
+    const d=await apiSafe('resendOtp',{phone:APP.tempPhone,purpose:APP.otpPurpose,nationalId:APP.tempNID},'در حال ارسال مجدد...');
+    APP.tempOTP=d.otp;
+    document.getElementById('otpCodeDisplay').textContent=d.otp;showToast('کد جدید ارسال شد','success');
+    if(APP.otpTimerInterval)clearInterval(APP.otpTimerInterval);
+    document.getElementById('resendBtn').style.display='none';document.getElementById('otpTimer').style.display='inline';
+    startOTPTimer();const b=document.getElementById('otpBoxes').children;for(let i=0;i<5;i++)b[i].value='';b[0].focus();
+  }catch(e){}
+}
+function copyOTP(){if(!APP.tempOTP)return;navigator.clipboard.writeText(APP.tempOTP).then(()=>showToast('کپی شد','success')).catch(()=>showToast('کد: '+APP.tempOTP,'info'))}
+
+function initOTPView(){
+  document.getElementById('otpCodeDisplay').textContent=APP.tempOTP||'-----';
+  const c=document.getElementById('otpBoxes');c.innerHTML='';
+  for(let i=0;i<5;i++){
+    const inp=document.createElement('input');inp.type='text';inp.maxLength=1;inp.inputMode='numeric';
+    inp.className='input-field text-center text-xl font-bold';inp.style.cssText='width:48px;padding:12px 0';
+    inp.addEventListener('input',function(){this.value=this.value.replace(/\D/g,'');if(this.value&&i<4)c.children[i+1].focus()});
+    inp.addEventListener('keydown',function(e){if(e.key==='Backspace'&&!this.value&&i>0)c.children[i-1].focus();if(e.key==='Enter')verifyOTP()});
+    inp.addEventListener('paste',function(e){e.preventDefault();const p=(e.clipboardData||window.clipboardData).getData('text').replace(/\D/g,'');for(let j=0;j<Math.min(p.length,5);j++)c.children[j].value=p[j];c.children[Math.min(p.length,4)].focus()});
+    c.appendChild(inp);
+  }
+  c.children[0].focus();document.getElementById('resendBtn').style.display='none';document.getElementById('otpTimer').style.display='inline';startOTPTimer();
+}
+function startOTPTimer(){
+  let s=120;const el=document.getElementById('otpTimer'),btn=document.getElementById('resendBtn');
+  if(APP.otpTimerInterval)clearInterval(APP.otpTimerInterval);
+  APP.otpTimerInterval=setInterval(()=>{s--;el.textContent=String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');if(s<=0){clearInterval(APP.otpTimerInterval);el.style.display='none';btn.style.display='inline'}},1000);
+}
+async function verifyOTP(){
+  const b=document.getElementById('otpBoxes').children;let code='';for(let i=0;i<5;i++)code+=b[i].value;
+  if(code.length!==5){showToast('کد ۵ رقمی را کامل وارد کنید','error');return}
+  try{
+    if(APP.otpPurpose==='login'){
+      const u=await apiSafe('verifyOtpLogin',{phone:APP.tempPhone,code:code},'در حال بررسی...');
+      APP.currentUser=u;navigateTo('user-dashboard');return;
+    }
+    if(APP.otpPurpose==='claim'){
+      const u=await apiSafe('verifyOtpClaim',{phone:APP.tempPhone,code:code,nationalId:APP.tempNID},'در حال بررسی...');
+      APP.currentUser=u;showToast('حساب فعال شد. اطلاعات خود را ویرایش کنید.','success');navigateTo('user-dashboard');return;
+    }
+    await apiSafe('verifyOtpRegister',{phone:APP.tempPhone,code:code},'در حال بررسی...');
+    navigateTo('verify');
+  }catch(e){for(let i=0;i<5;i++)b[i].value='';b[0].focus()}
+}
+
+// ==================== سؤالات تأیید ====================
+async function initVerifyView(){
+  const qs=await apiSafe('getVerifyQuestions',{},'در حال بارگذاری سؤالات...');
+  APP.verifyQuestions=qs;
+  document.getElementById('verifyQuestions').innerHTML=qs.map((q,qi)=>`
+    <div class="p-4 rounded-xl border border-border bg-bg/50"><p class="font-bold mb-3 text-sm">${qi+1}. ${q.q}</p>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${q.opts.map((o,oi)=>`<div class="radio-card" onclick="selVO(${qi},${oi},this)"><div class="dot"></div><span class="text-sm">${o}</span></div>`).join('')}</div></div>`).join('');
+}
+let vAns={};
+function selVO(qi,oi,el){vAns[qi]=el.querySelector('span').textContent;el.parentElement.querySelectorAll('.radio-card').forEach(c=>c.classList.remove('selected'));el.classList.add('selected')}
+async function checkVerifyAnswers(){
+  if(Object.keys(vAns).length<APP.verifyQuestions.length){showToast('به همه سؤالات پاسخ دهید','error');return}
+  const answers=APP.verifyQuestions.map((q,i)=>({id:q.id,selectedText:vAns[i]}));
+  try{
+    const r=await apiSafe('checkVerifyAnswers',{answers:answers},'در حال بررسی پاسخ‌ها...');
+    if(!r.passed){showToast(`فقط ${r.correctCount} از ۳ درست بود`,'error');vAns={};await initVerifyView();return}
+    showToast('هویت تأیید شد','success');vAns={};navigateTo('register');
+  }catch(e){}
+}
+
+// ==================== ساخت فرم ====================
+function buildForm(mode){
+  const u=mode==='edit'?APP.currentUser:{};
+  const isEdit=mode==='edit';const p=isEdit?'e':'r';
+  if(!isEdit){APP.selectedGender='';APP.selectedFamilyHead='';APP.selectedEducation='';APP.selectedEmployment='';APP.selectedCity='';APP.selectedTechSkills=[];APP.selectedSportSkills=[];APP.selectedSartaife='';APP.selectedTayefe='';APP.selectedIsAdai='';APP.achievements='';APP.selectedHeadNID='';APP.selectedHeadName=''}
+  else{APP.selectedGender=u.gender||'';APP.selectedFamilyHead=u.isFamilyHead?'بله':'خیر';APP.selectedEducation=u.education||'';APP.selectedEmployment=u.employment||'';APP.selectedCity=u.city||'';APP.selectedTechSkills=[...(u.techSkills||[])];APP.selectedSportSkills=[...(u.sportSkills||[])];APP.selectedSartaife=u.sartaife||'';APP.selectedTayefe=u.tayefe||'';APP.selectedIsAdai=u.isAdai||'';APP.achievements=u.achievements||'';APP.selectedHeadNID=u.familyHeadNID||'';APP.selectedHeadName=u.familyHeadName||''}
+
+  const eduList=getEducations(),empList=getEmployments(),cityList=getCities(),techList=getTechSkills(),sportList=getSportSkills(),sartaifeList=getSartaife(),tayefeMap=getTayefeMap();
+  // نکته اصلاحی: تا زمانی که کاربر مشخص نکرده از عشیره آدای هست یا خیر، فهرست سرطایفه نمایش داده نمی‌شود
+  const isAdaiAns=APP.selectedIsAdai;
+  const filteredST=isAdaiAns==='بله'?sartaifeList:(isAdaiAns==='خیر'?['سایر']:[]);
+  const selST=APP.selectedSartaife||'';
+  const tayefes=(selST&&selST!=='سایر')?(tayefeMap[selST]||[]):[];
+  const showTY=tayefes.length>0&&selST!=='سایر';
+  const showOtherTayefe=selST==='سایر';
+
+  let h=`<form onsubmit="return false" class="space-y-6">`;
+  // اطلاعات فردی
+  h+=`<div class="card"><h3 class="text-gold font-bold mb-4"><i class="fas fa-user ml-2"></i>اطلاعات فردی</h3><div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div><label class="block text-sm font-medium mb-1.5 text-muted">نام</label><input id="${p}FN" class="input-field" value="${u.firstName||''}"></div>
+    <div><label class="block text-sm font-medium mb-1.5 text-muted">نام خانوادگی</label><input id="${p}LN" class="input-field" value="${u.lastName||''}"></div>
+    <div><label class="block text-sm font-medium mb-1.5 text-muted">نام پدر</label><input id="${p}FaN" class="input-field" value="${u.fatherName||''}"></div>
+    <div><label class="block text-sm font-medium mb-1.5 text-muted">نام پدربزرگ</label><input id="${p}GFN" class="input-field" value="${u.grandFatherName||''}"></div>
+    <div><label class="block text-sm font-medium mb-1.5 text-muted">سال تولد</label><input id="${p}BY" type="number" min="1300" max="1410" class="input-field" value="${u.birthYear||''}"></div>
+    <div><label class="block text-sm font-medium mb-1.5 text-muted">جنسیت</label><div class="flex gap-3">${['مرد','زن'].map(g=>`<div class="radio-card flex-1 justify-center ${APP.selectedGender===g?'selected':''}" onclick="pR(this,'gender','${g}')"><div class="dot"></div><span class="text-sm">${g}</span></div>`).join('')}</div></div>`;
+  if(!isEdit) h+=`<div><label class="block text-sm font-medium mb-1.5 text-muted">سرپرست خانوار؟</label><div class="flex gap-3" id="${p}FH">${['بله','خیر'].map(g=>`<div class="radio-card flex-1 justify-center" onclick="pR(this,'FH','${g}');document.getElementById('${p}linkFH').style.display='${g==='خیر'?'block':'none'}'"><div class="dot"></div><span class="text-sm">${g}</span></div>`).join('')}</div></div>`;
+  h+=`</div></div>`;
+
+  // اتصال سرپرست (فقط ثبت‌نام)
+  if(!isEdit) h+=`<div id="${p}linkFH" class="card" style="display:none"><h3 class="text-gold font-bold mb-4"><i class="fas fa-people-roof ml-2"></i>اتصال به سرپرست</h3><div class="space-y-3"><div class="flex gap-2"><input id="${p}sFH" class="input-field flex-1" placeholder="جستجوی نام سرپرست..."><button type="button" class="btn-gold btn-sm" onclick="sFH('${p}')">جستجو</button></div><div id="${p}fhR" class="space-y-2"></div><div class="text-center text-muted text-xs my-2">یا</div><div><label class="block text-sm text-muted mb-1">کد ملی سرپرست</label><input id="${p}fhNID" class="input-field" maxlength="10" inputmode="numeric"></div></div><div id="${p}selFH" class="mt-3 p-3 rounded-lg bg-teal/10 border border-teal/30 text-teal text-sm" style="display:none"></div></div>`;
+
+  // تحصیلات و شغل
+  h+=`<div class="card"><h3 class="text-gold font-bold mb-4"><i class="fas fa-graduation-cap ml-2"></i>تحصیلات و شغل</h3><div class="space-y-4">
+    <div><label class="block text-sm font-medium mb-2 text-muted">تحصیلات</label><div class="flex flex-wrap gap-2">${eduList.map(e=>`<div class="chip ${APP.selectedEducation===e?'selected':''}" onclick="pC(this,'education','${e}')">${e}</div>`).join('')}</div></div>
+    <div><label class="block text-sm font-medium mb-2 text-muted">نوع اشتغال</label><div class="flex flex-wrap gap-2">${empList.map(e=>`<div class="chip ${APP.selectedEmployment===e?'selected':''}" onclick="pC(this,'employment','${e}')">${e}</div>`).join('')}</div></div>
+    <div><label class="block text-sm font-medium mb-1.5 text-muted">عنوان شغل</label><input id="${p}JT" class="input-field" value="${u.jobTitle||''}"></div>
+  </div></div>`;
+
+  // سکونت
+  h+=`<div class="card"><h3 class="text-gold font-bold mb-4"><i class="fas fa-location-dot ml-2"></i>محل سکونت</h3><div class="space-y-4">
+    <div><label class="block text-sm font-medium mb-2 text-muted">شهرستان</label><div class="flex flex-wrap gap-2">${cityList.map(c=>`<div class="chip ${APP.selectedCity===c?'selected':''}" onclick="pC(this,'city','${c}')">${c}</div>`).join('')}</div></div>
+    <div><label class="block text-sm font-medium mb-1.5 text-muted">توضیحات (نام محله)</label><textarea id="${p}CD" class="input-field" rows="2">${u.cityDesc||''}</textarea></div>
+  </div></div>`;
+
+  // مهارت‌ها
+  h+=`<div class="card"><h3 class="text-gold font-bold mb-4"><i class="fas fa-screwdriver-wrench ml-2"></i>مهارت‌ها</h3><div class="space-y-4">
+    <div><label class="block text-sm font-medium mb-2 text-muted">مهارت‌های فنی</label><div class="flex flex-wrap gap-2">${techList.map(s=>`<div class="chip ${APP.selectedTechSkills.includes(s)?'selected':''}" onclick="tM(this,'tech','${s}')">${s}</div>`).join('')}</div></div>
+    <div><label class="block text-sm font-medium mb-2 text-muted">مهارت‌های ورزشی</label><div class="flex flex-wrap gap-2">${sportList.map(s=>`<div class="chip ${APP.selectedSportSkills.includes(s)?'selected':''}" onclick="tM(this,'sport','${s}')">${s}</div>`).join('')}</div></div>
+    <div><label class="block text-sm font-medium mb-1.5 text-muted">افتخارات ثبت شده</label><textarea id="${p}ACH" class="input-field" rows="3">${APP.achievements||u.achievements||''}</textarea></div>
+  </div></div>`;
+
+  // آدای و سرطایفه
+  h+=`<div class="card"><h3 class="text-gold font-bold mb-4"><i class="fas fa-sitemap ml-2"></i>طایفه و سرطایفه</h3><div class="space-y-4">
+    <div><label class="block text-sm font-medium mb-2 text-muted">آیا از عشیره آدای هستید؟</label><div class="flex gap-3">${['بله','خیر'].map(g=>`<div class="radio-card flex-1 justify-center ${APP.selectedIsAdai===g?'selected':''}" onclick="pR(this,'isAdai','${g}');refST('${p}','${g}')"><div class="dot"></div><span class="text-sm">${g}</span></div>`).join('')}</div></div>
+    <div id="${p}stWrap" style="display:${isAdaiAns?'block':'none'}"><label class="block text-sm font-medium mb-2 text-muted">سرطایفه</label><div id="${p}stSel" class="flex flex-wrap gap-2">${filteredST.length?filteredST.map(s=>`<div class="chip ${selST===s?'selected':''}" onclick="pST('${p}','${s}')">${s}</div>`).join(''):'<span class="text-muted text-sm">ابتدا توسط ادمین تنظیم شود</span>'}</div></div>
+    <div id="${p}tyC" style="display:${showTY?'block':'none'}"><label class="block text-sm font-medium mb-2 text-muted">طایفه</label><div id="${p}tySel" class="flex flex-wrap gap-2">${tayefes.map(t=>`<div class="chip ${APP.selectedTayefe===t?'selected':''}" onclick="pC(this,'tayefe','${t}')">${t}</div>`).join('')}</div></div>
+    <div id="${p}tyOther" style="display:${showOtherTayefe?'block':'none'}"><label class="block text-sm font-medium mb-1.5 text-muted">نام طایفه/عشیره خود را وارد کنید</label><input id="${p}TYO" class="input-field" value="${showOtherTayefe?(u.tayefe||''):''}" oninput="APP.selectedTayefe=this.value"></div>
+  </div></div>`;
+
+  h+=`<button type="button" class="btn-gold w-full text-base py-3" onclick="${isEdit?'saveEdit()':'submitReg()'}"><i class="fas fa-save ml-2"></i>${isEdit?'ذخیره تغییرات':'ثبت نهایی'}</button>`;
+  if(isEdit) h+=`<button type="button" class="btn-outline w-full mt-3" onclick="navigateTo('user-dashboard')"><i class="fas fa-arrow-right ml-2"></i>بازگشت</button>`;
+  h+=`</form>`;
+  (isEdit?document.getElementById('editProfileContainer'):document.getElementById('registerFormContainer')).innerHTML=h;
+}
+
+function pR(el,g,v){el.parentElement.querySelectorAll('.radio-card').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');if(g==='gender')APP.selectedGender=v;if(g==='FH')APP.selectedFamilyHead=v;if(g==='isAdai')APP.selectedIsAdai=v}
+function pC(el,g,v){el.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');if(g==='education')APP.selectedEducation=v;if(g==='employment')APP.selectedEmployment=v;if(g==='city')APP.selectedCity=v;if(g==='tayefe')APP.selectedTayefe=v}
+function tM(el,g,v){el.classList.toggle('selected');const a=g==='tech'?APP.selectedTechSkills:APP.selectedSportSkills;const i=a.indexOf(v);if(i>-1)a.splice(i,1);else a.push(v)}
+function pST(p,v){APP.selectedSartaife=v;APP.selectedTayefe='';const map=getTayefeMap();const t=(v&&v!=='سایر')?(map[v]||[]):[];document.getElementById(p+'stSel').querySelectorAll('.chip').forEach(c=>c.classList.toggle('selected',c.textContent===v));const tc=document.getElementById(p+'tyC');const to=document.getElementById(p+'tyOther');if(t.length&&v!=='سایر'){tc.style.display='block';to.style.display='none';document.getElementById(p+'tySel').innerHTML=t.map(x=>`<div class="chip" onclick="pC(this,'tayefe','${x}')">${x}</div>`).join('')}else{tc.style.display='none';to.style.display=v==='سایر'?'block':'none'}}
+function refST(p,isAdai){APP.selectedSartaife='';APP.selectedTayefe='';const list=getSartaife();const f=isAdai==='خیر'?['سایر']:list;document.getElementById(p+'stWrap').style.display='block';document.getElementById(p+'stSel').innerHTML=f.length?f.map(s=>`<div class="chip" onclick="pST('${p}','${s}')">${s}</div>`).join(''):'<span class="text-muted text-sm">ابتدا توسط ادمین تنظیم شود</span>';document.getElementById(p+'tyC').style.display='none';document.getElementById(p+'tyOther').style.display=isAdai==='خیر'?'block':'none';if(isAdai==='خیر')pST(p,'سایر')}
+
+async function sFH(p){
+  const q=document.getElementById(p+'sFH').value.trim();if(!q){showToast('عبارتی وارد کنید','error');return}
+  try{
+    const hs=await apiSafe('findFamilyHeads',{query:q},'در حال جستجو...');
+    const c=document.getElementById(p+'fhR');if(!hs.length){c.innerHTML='<p class="text-muted text-sm">یافت نشد</p>';return}
+    c.innerHTML=hs.map(u=>`<div class="p-3 rounded-lg border border-border hover:border-gold cursor-pointer flex justify-between items-center" onclick="selFH('${p}','${u.nationalId}','${u.name}')"><span class="font-bold text-sm">${u.name}</span><i class="fas fa-check-circle text-teal"></i></div>`).join('');
+  }catch(e){}
+}
+function selFH(p,nid,name){APP.selectedHeadNID=nid;APP.selectedHeadName=name;document.getElementById(p+'selFH').style.display='block';document.getElementById(p+'selFH').innerHTML=`<i class="fas fa-user-check ml-2"></i>${name} (${nid})`;document.getElementById(p+'fhNID').value=nid}
+
+async function submitReg(){
+  const gF=v=>document.getElementById(v).value.trim();
+  const d={fn:gF('rFN'),ln:gF('rLN'),fa:gF('rFaN'),gf:gF('rGFN'),by:parseInt(gF('rBY'))||0,jt:gF('rJT'),cd:gF('rCD'),ach:gF('rACH')};
+  if(!d.fn||!d.ln||!d.fa){showToast('نام، نام خانوادگی و نام پدر الزامی','error');return}
+  if(!d.by||d.by<1300||d.by>1410){showToast('سال تولد معتبر نیست','error');return}
+  if(!APP.selectedGender||!APP.selectedFamilyHead||!APP.selectedEducation||!APP.selectedEmployment||!APP.selectedCity){showToast('همه فیلدهای انتخابی را پر کنید','error');return}
+  if(!APP.selectedIsAdai){showToast('مشخص کنید آیا از عشیره آدای هستید','error');return}
+  if(!APP.selectedSartaife){showToast('سرطایفه را انتخاب کنید','error');return}
+  let fhNID='',fhName='';
+  if(APP.selectedFamilyHead==='خیر'){
+    const nid=gF('rfhNID');fhNID=APP.selectedHeadNID||nid;
+    if(!fhNID){showToast('سرپرست را مشخص کنید','error');return}
+    try{const h=await apiSafe('getFamilyHeadByNID',{nationalId:fhNID},'در حال بررسی سرپرست...');if(!h){showToast('سرپرست یافت نشد','error');return}fhName=h.name}catch(e){return}
+  }
+  const user={nationalId:APP.tempNID,phone:APP.tempPhone,gender:APP.selectedGender,isFamilyHead:APP.selectedFamilyHead==='بله',familyHeadNID:APP.selectedFamilyHead==='خیر'?fhNID:null,familyHeadName:APP.selectedFamilyHead==='خیر'?fhName:null,firstName:d.fn,lastName:d.ln,fatherName:d.fa,grandFatherName:d.gf,birthYear:d.by,education:APP.selectedEducation,employment:APP.selectedEmployment,jobTitle:d.jt,city:APP.selectedCity,cityDesc:d.cd,techSkills:[...APP.selectedTechSkills],sportSkills:[...APP.selectedSportSkills],achievements:d.ach,isAdai:APP.selectedIsAdai,sartaife:APP.selectedSartaife,tayefe:APP.selectedTayefe,addedByHead:false};
+  try{
+    const saved=await apiSafe('registerUser',{user:user},'در حال ثبت اطلاعات...');
+    APP.currentUser=saved;showToast('ثبت شد','success');navigateTo('user-dashboard');
+  }catch(e){}
+}
+async function saveEdit(){
+  const gF=v=>document.getElementById(v).value.trim();const u=APP.currentUser;if(!u)return;
+  const d={fn:gF('eFN'),ln:gF('eLN'),fa:gF('eFaN'),gf:gF('eGFN'),by:parseInt(gF('eBY'))||0,jt:gF('eJT'),cd:gF('eCD'),ach:gF('eACH')};
+  if(!d.fn||!d.ln||!d.fa){showToast('نام، نام خانوادگی و نام پدر الزامی','error');return}
+  if(!APP.selectedIsAdai||!APP.selectedSartaife){showToast('طایفه و سرطایفه الزامی','error');return}
+  const fields={firstName:d.fn,lastName:d.ln,fatherName:d.fa,grandFatherName:d.gf,birthYear:d.by||u.birthYear,gender:APP.selectedGender,education:APP.selectedEducation,employment:APP.selectedEmployment,jobTitle:d.jt,city:APP.selectedCity,cityDesc:d.cd,techSkills:[...APP.selectedTechSkills],sportSkills:[...APP.selectedSportSkills],achievements:d.ach,isAdai:APP.selectedIsAdai,sartaife:APP.selectedSartaife,tayefe:APP.selectedTayefe};
+  try{
+    const updated=await apiSafe('updateSelf',{id:u.id,nationalId:u.nationalId,phone:u.phone,fields:fields},'در حال ذخیره...');
+    APP.currentUser=updated;showToast('ذخیره شد','success');navigateTo('user-dashboard');
+  }catch(e){}
+}
+
+// ==================== داشبورد ====================
+async function renderUserDashboard(){
+  const u=APP.currentUser;if(!u)return;
+  document.getElementById('userProfileCard').innerHTML=`
+    <div class="flex items-center justify-between mb-4"><h3 class="text-gold font-bold text-lg"><i class="fas fa-user-circle ml-2"></i>پروفایل شما</h3><button class="btn-gold btn-sm" onclick="navigateTo('edit-profile')"><i class="fas fa-edit ml-1"></i>ویرایش</button></div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8">
+      ${[['نام و نام خانوادگی',u.firstName+' '+u.lastName],['نام پدر',u.fatherName],['نام پدربزرگ',u.grandFatherName||'—'],['جنسیت',u.gender],['سال تولد',u.birthYear],['تحصیلات',u.education],['اشتغال',u.employment],['شغل',u.jobTitle||'—'],['شهرستان',u.city],['آدای',u.isAdai||'—'],['سرطایفه',u.sartaife||'—'],['طایفه',u.tayefe||'—'],['سرپرست',u.isFamilyHead?'بله':'خیر']].map(([l,v])=>`<div class="info-row"><span class="info-label">${l}</span><span class="info-value">${v}</span></div>`).join('')}
+    </div>
+    ${(u.techSkills||[]).length?`<div class="mt-3"><span class="text-muted text-xs">مهارت فنی: </span>${u.techSkills.map(s=>`<span class="badge badge-gold mr-1">${s}</span>`).join('')}</div>`:''}
+    ${(u.sportSkills||[]).length?`<div class="mt-2"><span class="text-muted text-xs">مهارت ورزشی: </span>${u.sportSkills.map(s=>`<span class="badge badge-teal mr-1">${s}</span>`).join('')}</div>`:''}
+    ${u.achievements?`<div class="mt-2"><span class="text-muted text-xs">افتخارات: </span><span class="text-sm">${u.achievements}</span></div>`:''}`;
+  try{
+    const stats=await apiSafe('getStats',{},'در حال بارگذاری آمار...');
+    renderStatsFromStats('userStatsRow',stats);renderChartsFromStats('userCharts',stats);
+  }catch(e){}
+}
+
+function renderStatsFromStats(id,stats){
+  const c=document.getElementById(id);if(!c)return;c.innerHTML='';
+  [{n:stats.total,l:'کل',i:'fa-users',cl:'gold'},{n:stats.male,l:'مرد',i:'fa-mars',cl:'teal'},{n:stats.female,l:'زن',i:'fa-venus',cl:'gold'},{n:stats.heads,l:'سرپرست',i:'fa-house-chimney',cl:'teal'}].forEach(s=>{c.innerHTML+=`<div class="stat-card"><i class="fas ${s.i} text-${s.cl} text-xl mb-2"></i><div class="num">${s.n}</div><div class="label">${s.l}</div></div>`});
+}
+
+function renderChartsFromStats(cid,stats){
+  const c=document.getElementById(cid);
+  if(!stats.total){c.innerHTML='<div class="col-span-full text-center text-muted py-20"><i class="fas fa-chart-bar text-4xl mb-4 block opacity-30"></i>هنوز داده‌ای ثبت نشده</div>';return}
+  const gC=['#d4a843','#e8c86a','#b8922e','#c2956a','#a07d3f','#f0d78c','#8b6914','#d4b876','#c4a04a','#e0c468','#c2956a','#a07d3f','#f0d78c','#8b6914','#d4b876'];
+  const tC=['#2ea58e','#3bc4a8','#238470','#47d4b8','#1a6b5a','#5de4c8','#0f5040','#6df4d8','#2ea58e','#3bc4a8','#238470','#47d4b8'];
+  const co={responsive:true,plugins:{legend:{labels:{color:'#8b949e',font:{family:'Vazirmatn',size:11}}}}};
+  const bo={...co,scales:{x:{ticks:{color:'#8b949e',font:{family:'Vazirmatn',size:10}},grid:{color:'#21262d'}},y:{ticks:{color:'#8b949e',font:{family:'Vazirmatn'}},grid:{color:'#21262d'},beginAtZero:true}}};
+  const po={...co,plugins:{...co.plugins,legend:{position:'bottom',labels:{color:'#8b949e',font:{family:'Vazirmatn',size:11},padding:12}}}};
+  c.innerHTML=['سطح سرطایفه‌ها:ch-st:pie','نسبت جنسیت:ch-gn:pie','طایفه‌ها:ch-ty:bar','تحصیلات:ch-ed:bar','اشتغال:ch-em:bar','مهارت فنی:ch-tc:bar','مهارت ورزشی:ch-sp:bar','شهرستان‌ها:ch-ct:bar'].map(x=>{const[t,id]=x.split(':');return`<div class="card"><h4 class="font-bold text-gold mb-3 text-sm">${t}</h4><canvas id="${id}"></canvas></div>`}).join('');
+  const d1=stats.bySartaife;APP.chartInstances.push(new Chart(document.getElementById('ch-st'),{type:'pie',data:{labels:Object.keys(d1),datasets:[{data:Object.values(d1),backgroundColor:gC}]},options:po}));
+  const d2=stats.byGender;APP.chartInstances.push(new Chart(document.getElementById('ch-gn'),{type:'pie',data:{labels:Object.keys(d2),datasets:[{data:Object.values(d2),backgroundColor:['#2ea58e','#d4a843']}]},options:po}));
+  const d3=stats.byTayefe;APP.chartInstances.push(new Chart(document.getElementById('ch-ty'),{type:'bar',data:{labels:Object.keys(d3),datasets:[{label:'تعداد',data:Object.values(d3),backgroundColor:tC}]},options:{...bo,indexAxis:'y'}}));
+  const d4=stats.byEducation;APP.chartInstances.push(new Chart(document.getElementById('ch-ed'),{type:'bar',data:{labels:Object.keys(d4),datasets:[{label:'تعداد',data:Object.values(d4),backgroundColor:gC}]},options:{...bo,indexAxis:'y'}}));
+  const d5=stats.byEmployment;APP.chartInstances.push(new Chart(document.getElementById('ch-em'),{type:'bar',data:{labels:Object.keys(d5),datasets:[{label:'تعداد',data:Object.values(d5),backgroundColor:tC}]},options:{...bo,indexAxis:'y'}}));
+  const d6=stats.byTechSkill;APP.chartInstances.push(new Chart(document.getElementById('ch-tc'),{type:'bar',data:{labels:Object.keys(d6),datasets:[{label:'تعداد',data:Object.values(d6),backgroundColor:gC}]},options:{...bo,indexAxis:'y'}}));
+  const d7=stats.bySportSkill;APP.chartInstances.push(new Chart(document.getElementById('ch-sp'),{type:'bar',data:{labels:Object.keys(d7),datasets:[{label:'تعداد',data:Object.values(d7),backgroundColor:tC}]},options:{...bo,indexAxis:'y'}}));
+  const d8=stats.byCity;APP.chartInstances.push(new Chart(document.getElementById('ch-ct'),{type:'bar',data:{labels:Object.keys(d8),datasets:[{label:'تعداد',data:Object.values(d8),backgroundColor:gC}]},options:bo}));
+}
+
+// ==================== مدیریت خانوار ====================
+async function renderFamilyManage(){
+  const c=document.getElementById('familyMembersList');
+  if(!APP.currentUser||!APP.currentUser.isFamilyHead){c.innerHTML='<p class="text-muted text-center py-10">شما سرپرست نیستید</p>';return}
+  try{
+    const ms=await apiSafe('getFamilyMembers',{headNID:APP.currentUser.nationalId,headPhone:APP.currentUser.phone},'در حال بارگذاری اعضا...');
+    if(!ms.length){c.innerHTML='<p class="text-muted text-center py-10">عضوی ثبت نشده</p>';return}
+    c.innerHTML=ms.map(m=>`<div class="card flex flex-col sm:flex-row sm:items-center justify-between gap-3"><div><span class="font-bold">${m.firstName} ${m.lastName}</span><span class="text-muted text-xs mr-2">${m.gender} - ${m.education}</span>${m.phone?'<span class="badge badge-teal mr-1">فعال</span>':'<span class="badge badge-gold mr-1">بدون شماره</span>'}</div><div class="flex gap-2"><button class="btn-outline btn-sm" onclick="editFM('${m.id}')"><i class="fas fa-edit ml-1"></i>ویرایش</button><button class="btn-danger btn-sm" onclick="delFM('${m.id}')"><i class="fas fa-trash ml-1"></i>حذف</button></div></div>`).join('');
+    APP._familyCache=ms;
+  }catch(e){}
+}
+
+function addFamilyMember(){
+  const techList=getTechSkills(),sportList=getSportSkills();
+  showModal(`<h3 class="text-lg font-bold text-gold mb-4"><i class="fas fa-user-plus ml-2"></i>افزودن عضو</h3>
+    <div class="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="block text-xs text-muted mb-1">کد ملی</label><input id="fmNID" class="input-field" maxlength="10" inputmode="numeric"></div>
+        <div><label class="block text-xs text-muted mb-1">نام</label><input id="fmFN" class="input-field"></div>
+        <div><label class="block text-xs text-muted mb-1">نام خانوادگی</label><input id="fmLN" class="input-field"></div>
+        <div><label class="block text-xs text-muted mb-1">نام پدر</label><input id="fmFa" class="input-field"></div>
+        <div><label class="block text-xs text-muted mb-1">نام پدربزرگ</label><input id="fmGF" class="input-field"></div>
+        <div><label class="block text-xs text-muted mb-1">سال تولد</label><input id="fmYR" type="number" class="input-field" min="1300" max="1410"></div>
+        <div><label class="block text-xs text-muted mb-1">جنسیت</label><select id="fmGN" class="input-field"><option value="">انتخاب</option><option>مرد</option><option>زن</option></select></div>
+        <div><label class="block text-xs text-muted mb-1">تحصیلات</label><select id="fmED" class="input-field">${getEducations().map(e=>`<option>${e}</option>`).join('')}</select></div>
+        <div><label class="block text-xs text-muted mb-1">اشتغال</label><select id="fmEM" class="input-field">${getEmployments().map(e=>`<option>${e}</option>`).join('')}</select></div>
+        <div><label class="block text-xs text-muted mb-1">شغل</label><input id="fmJT" class="input-field"></div>
+      </div>
+      <div><label class="block text-xs text-muted mb-1">شهرستان</label><select id="fmCT" class="input-field">${getCities().map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div><label class="block text-xs text-muted mb-2">مهارت فنی</label><div id="fmTC" class="flex flex-wrap gap-1">${techList.map(s=>`<div class="chip text-xs" onclick="this.classList.toggle('selected')">${s}</div>`).join('')}</div></div>
+      <div><label class="block text-xs text-muted mb-2">مهارت ورزشی</label><div id="fmSP" class="flex flex-wrap gap-1">${sportList.map(s=>`<div class="chip text-xs" onclick="this.classList.toggle('selected')">${s}</div>`).join('')}</div></div>
+      <div><label class="block text-xs text-muted mb-1">افتخارات</label><textarea id="fmACH" class="input-field" rows="2"></textarea></div>
+      <div class="flex gap-2 pt-2"><button class="btn-gold flex-1" onclick="saveFM()">ثبت</button><button class="btn-outline flex-1" onclick="closeModal()">انصراف</button></div>
+    </div>`);
+}
+
+async function saveFM(){
+  const nid=document.getElementById('fmNID').value.trim(),fn=document.getElementById('fmFN').value.trim(),ln=document.getElementById('fmLN').value.trim(),fa=document.getElementById('fmFa').value.trim();
+  if(!nid||!fn||!ln||!fa){showToast('فیلدهای الزامی','error');return}
+  const tc=[],sp=[];document.getElementById('fmTC').querySelectorAll('.chip.selected').forEach(c=>tc.push(c.textContent));
+  document.getElementById('fmSP').querySelectorAll('.chip.selected').forEach(c=>sp.push(c.textContent));
+  const member={nationalId:nid,gender:document.getElementById('fmGN').value,firstName:fn,lastName:ln,fatherName:fa,grandFatherName:document.getElementById('fmGF').value.trim(),birthYear:parseInt(document.getElementById('fmYR').value)||0,education:document.getElementById('fmED').value,employment:document.getElementById('fmEM').value,jobTitle:document.getElementById('fmJT').value.trim(),city:document.getElementById('fmCT').value,techSkills:tc,sportSkills:sp,achievements:document.getElementById('fmACH').value.trim()};
+  try{
+    await apiSafe('addFamilyMember',{headNID:APP.currentUser.nationalId,headPhone:APP.currentUser.phone,member:member},'در حال ثبت...');
+    closeModal();showToast('اضافه شد','success');renderFamilyManage();
+  }catch(e){}
+}
+
+function editFM(id){
+  const m=(APP._familyCache||[]).find(x=>x.id===id);if(!m)return;
+  const tl=getTechSkills(),sl=getSportSkills();
+  showModal(`<h3 class="text-lg font-bold text-gold mb-4"><i class="fas fa-edit ml-2"></i>ویرایش ${m.firstName} ${m.lastName}</h3>
+    <div class="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="block text-xs text-muted mb-1">نام</label><input id="efFN" class="input-field" value="${m.firstName}"></div>
+        <div><label class="block text-xs text-muted mb-1">نام خانوادگی</label><input id="efLN" class="input-field" value="${m.lastName}"></div>
+        <div><label class="block text-xs text-muted mb-1">نام پدر</label><input id="efFa" class="input-field" value="${m.fatherName}"></div>
+        <div><label class="block text-xs text-muted mb-1">نام پدربزرگ</label><input id="efGF" class="input-field" value="${m.grandFatherName||''}"></div>
+        <div><label class="block text-xs text-muted mb-1">سال تولد</label><input id="efYR" type="number" class="input-field" value="${m.birthYear}"></div>
+        <div><label class="block text-xs text-muted mb-1">جنسیت</label><select id="efGN" class="input-field"><option ${m.gender==='مرد'?'selected':''}>مرد</option><option ${m.gender==='زن'?'selected':''}>زن</option></select></div>
+        <div><label class="block text-xs text-muted mb-1">تحصیلات</label><select id="efED" class="input-field">${getEducations().map(e=>`<option ${m.education===e?'selected':''}>${e}</option>`).join('')}</select></div>
+        <div><label class="block text-xs text-muted mb-1">اشتغال</label><select id="efEM" class="input-field">${getEmployments().map(e=>`<option ${m.employment===e?'selected':''}>${e}</option>`).join('')}</select></div>
+        <div class="col-span-2"><label class="block text-xs text-muted mb-1">شغل</label><input id="efJT" class="input-field" value="${m.jobTitle||''}"></div>
+        <div class="col-span-2"><label class="block text-xs text-muted mb-1">شهرستان</label><select id="efCT" class="input-field">${getCities().map(c=>`<option ${m.city===c?'selected':''}>${c}</option>`).join('')}</select></div>
+      </div>
+      <div><label class="block text-xs text-muted mb-2">مهارت فنی</label><div id="efTC" class="flex flex-wrap gap-1">${tl.map(s=>`<div class="chip text-xs ${(m.techSkills||[]).includes(s)?'selected':''}" onclick="this.classList.toggle('selected')">${s}</div>`).join('')}</div></div>
+      <div><label class="block text-xs text-muted mb-2">مهارت ورزشی</label><div id="efSP" class="flex flex-wrap gap-1">${sl.map(s=>`<div class="chip text-xs ${(m.sportSkills||[]).includes(s)?'selected':''}" onclick="this.classList.toggle('selected')">${s}</div>`).join('')}</div></div>
+      <div><label class="block text-xs text-muted mb-1">افتخارات</label><textarea id="efACH" class="input-field" rows="2">${m.achievements||''}</textarea></div>
+      <div class="flex gap-2 pt-2"><button class="btn-gold flex-1" onclick="saveEFM('${id}')">ذخیره</button><button class="btn-outline flex-1" onclick="closeModal()">انصراف</button></div>
+    </div>`);
+}
+async function saveEFM(id){
+  const tc=[],sp=[];document.getElementById('efTC').querySelectorAll('.chip.selected').forEach(c=>tc.push(c.textContent));
+  document.getElementById('efSP').querySelectorAll('.chip.selected').forEach(c=>sp.push(c.textContent));
+  const fields={firstName:document.getElementById('efFN').value.trim(),lastName:document.getElementById('efLN').value.trim(),fatherName:document.getElementById('efFa').value.trim(),grandFatherName:document.getElementById('efGF').value.trim(),birthYear:parseInt(document.getElementById('efYR').value)||0,gender:document.getElementById('efGN').value,education:document.getElementById('efED').value,employment:document.getElementById('efEM').value,jobTitle:document.getElementById('efJT').value.trim(),city:document.getElementById('efCT').value,techSkills:tc,sportSkills:sp,achievements:document.getElementById('efACH').value.trim()};
+  try{
+    await apiSafe('updateFamilyMember',{headNID:APP.currentUser.nationalId,headPhone:APP.currentUser.phone,id:id,fields:fields},'در حال ذخیره...');
+    closeModal();showToast('ذخیره شد','success');renderFamilyManage();
+  }catch(e){}
+}
+async function delFM(id){
+  if(!confirm('حذف شود؟'))return;
+  try{await apiSafe('deleteFamilyMember',{headNID:APP.currentUser.nationalId,headPhone:APP.currentUser.phone,id:id},'در حال حذف...');showToast('حذف شد','success');renderFamilyManage()}catch(e){}
+}
+
+// ==================== ادمین ====================
+async function adminLogin(){
+  const u=document.getElementById('adminUser').value.trim(),p=document.getElementById('adminPass').value;
+  if(!u||!p){showToast('فیلدها الزامی','error');return}
+  try{
+    const a=await apiSafe('adminLogin',{username:u,password:p},'در حال ورود...');
+    APP.currentAdmin=a;APP.adminToken=a.token;APP.adminTab='lists';showToast('خوش آمدید','success');
+    await ensureBootstrap();
+    navigateTo('admin');
+  }catch(e){}
+}
+
+async function renderAdminPanel(){
+  const tabs=[{id:'users',l:'کاربران',i:'fa-users'},{id:'charts',l:'نمودارها',i:'fa-chart-bar'},{id:'admins',l:'ادمین‌ها',i:'fa-user-shield'},{id:'lists',l:'داده‌های پایه',i:'fa-database'},{id:'questions',l:'سؤالات تأیید',i:'fa-circle-question'}];
+  document.getElementById('adminTabs').innerHTML=tabs.map(t=>`<button class="tab-btn ${APP.adminTab===t.id?'active':''}" onclick="APP.adminTab='${t.id}';renderAdminPanel()"><i class="fas ${t.i} ml-1"></i>${t.l}</button>`).join('');
+  const c=document.getElementById('adminContent');
+  await ensureBootstrap();
+  if(APP.adminTab==='users')await renderAdminUsers(c);else if(APP.adminTab==='charts')await renderAdminCharts(c);
+  else if(APP.adminTab==='admins')await renderAdminAdmins(c);else if(APP.adminTab==='lists')renderAdminLists(c);
+  else if(APP.adminTab==='questions')await renderAdminQuestions(c);
+}
+
+// ---- تب کاربران ----
+async function renderAdminUsers(c){
+  try{
+    const users=await apiSafe('adminGetUsers',{},'در حال بارگذاری کاربران...');
+    APP.adminUsersCache=users;
+    let h=`<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">`;
+    [{n:users.length,l:'کل',i:'fa-users',cl:'gold'},{n:users.filter(u=>u.gender==='مرد').length,l:'مرد',i:'fa-mars',cl:'teal'},{n:users.filter(u=>u.gender==='زن').length,l:'زن',i:'fa-venus',cl:'gold'},{n:users.filter(u=>u.isFamilyHead).length,l:'سرپرست',i:'fa-house-chimney',cl:'teal'}].forEach(s=>{h+=`<div class="stat-card"><i class="fas ${s.i} text-${s.cl} text-xl mb-2"></i><div class="num">${s.n}</div><div class="label">${s.l}</div></div>`});
+    h+=`</div><div class="mb-4 flex flex-wrap gap-2 items-center"><input id="aSrc" class="input-field" style="max-width:300px" placeholder="جستجو..." oninput="filtAU()">
+      <button class="btn-outline btn-sm" onclick="exportExcel()"><i class="fas fa-file-excel ml-1" style="color:#2ea58e"></i>خروجی اکسل</button>
+      <button class="btn-outline btn-sm" onclick="exportCSV()"><i class="fas fa-file-csv ml-1"></i>خروجی CSV</button></div>`;
+    h+=`<div class="table-container"><table><thead><tr><th>ردیف</th><th>نام</th><th>پدر</th><th>پدربزرگ</th><th>کد ملی</th><th>موبایل</th><th>جنسیت</th><th>تحصیلات</th><th>شغل</th><th>شهر</th><th>آدای</th><th>سرطایفه</th><th>طایفه</th><th>سرپرست</th><th>عملیات</th></tr></thead><tbody id="aUB"></tbody></table></div>`;
+    c.innerHTML=h;filtAU();
+  }catch(e){}
+}
+function filtAU(){
+  const q=(document.getElementById('aSrc')?.value||'').trim().toLowerCase();let users=APP.adminUsersCache||[];if(q)users=users.filter(u=>(u.firstName+' '+u.lastName).toLowerCase().includes(q)||u.nationalId.includes(q)||(u.phone||'').includes(q));
+  const b=document.getElementById('aUB');if(!b)return;
+  if(!users.length){b.innerHTML='<tr><td colspan="15" class="text-center text-muted py-8">یافت نشد</td></tr>';return}
+  b.innerHTML=users.map((u,i)=>`<tr><td>${i+1}</td><td class="font-bold">${u.firstName} ${u.lastName}</td><td>${u.fatherName}</td><td>${u.grandFatherName||'—'}</td><td>${u.nationalId}</td><td dir="ltr">${u.phone||'—'}</td><td><span class="badge ${u.gender==='مرد'?'badge-teal':'badge-gold'}">${u.gender}</span></td><td>${u.education}</td><td>${u.employment}</td><td>${u.city}</td><td>${u.isAdai||'—'}</td><td>${u.sartaife||'—'}</td><td>${u.tayefe||'—'}</td><td>${u.isFamilyHead?'<span class="badge badge-gold">بله</span>':'خیر'}</td><td><div class="flex gap-1"><button class="btn-outline btn-sm" style="padding:4px 10px;font-size:11px" onclick="adminEU('${u.id}')"><i class="fas fa-edit"></i></button><button class="btn-danger btn-sm" style="padding:4px 10px;font-size:11px" onclick="adminDU('${u.id}')"><i class="fas fa-trash"></i></button></div></td></tr>`).join('');
+}
+
+function adminEU(id){
+  const u=(APP.adminUsersCache||[]).find(x=>x.id===id);if(!u)return;
+  const sList=getSartaife();
+  showModal(`<h3 class="text-lg font-bold text-gold mb-4"><i class="fas fa-edit ml-2"></i>ویرایش ${u.firstName} ${u.lastName}</h3>
+    <div class="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+      <div class="grid grid-cols-2 gap-3">
+        <div><label class="block text-xs text-muted mb-1">نام</label><input id="auFN" class="input-field" value="${u.firstName}"></div>
+        <div><label class="block text-xs text-muted mb-1">نام خانوادگی</label><input id="auLN" class="input-field" value="${u.lastName}"></div>
+        <div><label class="block text-xs text-muted mb-1">نام پدر</label><input id="auFa" class="input-field" value="${u.fatherName}"></div>
+        <div><label class="block text-xs text-muted mb-1">نام پدربزرگ</label><input id="auGF" class="input-field" value="${u.grandFatherName||''}"></div>
+        <div><label class="block text-xs text-muted mb-1">کد ملی</label><input id="auNID" class="input-field" value="${u.nationalId}" maxlength="10"></div>
+        <div><label class="block text-xs text-muted mb-1">سال تولد</label><input id="auYR" type="number" class="input-field" value="${u.birthYear}"></div>
+        <div><label class="block text-xs text-muted mb-1">جنسیت</label><select id="auGN" class="input-field"><option ${u.gender==='مرد'?'selected':''}>مرد</option><option ${u.gender==='زن'?'selected':''}>زن</option></select></div>
+        <div><label class="block text-xs text-muted mb-1">تحصیلات</label><select id="auED" class="input-field">${getEducations().map(e=>`<option ${u.education===e?'selected':''}>${e}</option>`).join('')}</select></div>
+        <div><label class="block text-xs text-muted mb-1">اشتغال</label><select id="auEM" class="input-field">${getEmployments().map(e=>`<option ${u.employment===e?'selected':''}>${e}</option>`).join('')}</select></div>
+        <div><label class="block text-xs text-muted mb-1">شغل</label><input id="auJT" class="input-field" value="${u.jobTitle||''}"></div>
+        <div><label class="block text-xs text-muted mb-1">شهرستان</label><select id="auCT" class="input-field">${getCities().map(c=>`<option ${u.city===c?'selected':''}>${c}</option>`).join('')}</select></div>
+        <div><label class="block text-xs text-muted mb-1">آدای</label><select id="auAD" class="input-field"><option ${u.isAdai==='بله'?'selected':''}>بله</option><option ${u.isAdai==='خیر'?'selected':''}>خیر</option></select></div>
+        <div><label class="block text-xs text-muted mb-1">سرطایفه</label><select id="auST" class="input-field">${sList.map(s=>`<option ${u.sartaife===s?'selected':''}>${s}</option>`).join('')}</select></div>
+        <div><label class="block text-xs text-muted mb-1">طایفه</label><input id="auTY" class="input-field" value="${u.tayefe||''}"></div>
+        <div><label class="block text-xs text-muted mb-1">موبایل</label><input id="auPH" class="input-field" value="${u.phone||''}" dir="ltr"></div>
+      </div>
+      <div><label class="block text-xs text-muted mb-1">توضیحات سکونت</label><textarea id="auCD" class="input-field" rows="2">${u.cityDesc||''}</textarea></div>
+      <div><label class="block text-xs text-muted mb-1">افتخارات</label><textarea id="auACH" class="input-field" rows="2">${u.achievements||''}</textarea></div>
+      <div class="flex gap-2 pt-2"><button class="btn-gold flex-1" onclick="saveAU('${id}')">ذخیره</button><button class="btn-outline flex-1" onclick="closeModal()">انصراف</button></div>
+    </div>`);
+}
+async function saveAU(id){
+  const fields={firstName:document.getElementById('auFN').value.trim(),lastName:document.getElementById('auLN').value.trim(),fatherName:document.getElementById('auFa').value.trim(),grandFatherName:document.getElementById('auGF').value.trim(),nationalId:document.getElementById('auNID').value.trim(),birthYear:parseInt(document.getElementById('auYR').value)||0,gender:document.getElementById('auGN').value,education:document.getElementById('auED').value,employment:document.getElementById('auEM').value,jobTitle:document.getElementById('auJT').value.trim(),city:document.getElementById('auCT').value,cityDesc:document.getElementById('auCD').value.trim(),isAdai:document.getElementById('auAD').value,sartaife:document.getElementById('auST').value,tayefe:document.getElementById('auTY').value.trim(),phone:document.getElementById('auPH').value.trim(),achievements:document.getElementById('auACH').value.trim()};
+  try{await apiSafe('adminUpdateUser',{id:id,fields:fields},'در حال ذخیره...');closeModal();showToast('ذخیره شد','success');renderAdminPanel()}catch(e){}
+}
+async function adminDU(id){
+  if(!confirm('حذف شود؟ (در صورت سرپرست بودن، اعضای خانواده نیز حذف می‌شوند)'))return;
+  try{await apiSafe('adminDeleteUser',{id:id},'در حال حذف...');showToast('حذف شد','success');renderAdminPanel()}catch(e){}
+}
+
+// ---- خروجی اکسل / CSV ----
+function exportExcel(){
+  const users=APP.adminUsersCache||[];if(!users.length){showToast('داده‌ای نیست','error');return}
+  const data=users.map(u=>({'کد ملی':u.nationalId,'نام':u.firstName,'نام خانوادگی':u.lastName,'نام پدر':u.fatherName,'نام پدربزرگ':u.grandFatherName||'','جنسیت':u.gender,'سال تولد':u.birthYear,'تحصیلات':u.education,'نوع اشتغال':u.employment,'عنوان شغل':u.jobTitle||'','شهرستان':u.city,'توضیحات سکونت':u.cityDesc||'','آدای':u.isAdai||'','سرطایفه':u.sartaife||'','طایفه':u.tayefe||'','سرپرست خانوار':u.isFamilyHead?'بله':'خیر','نام سرپرست':u.familyHeadName||'','شماره موبایل':u.phone||'','مهارت فنی':(u.techSkills||[]).join(' | '),'مهارت ورزشی':(u.sportSkills||[]).join(' | '),'افتخارات':u.achievements||''}));
+  const ws=XLSX.utils.json_to_sheet(data);
+  ws['!cols']=[{wch:12},{wch:12},{wch:15},{wch:12},{wch:14},{wch:8},{wch:10},{wch:14},{wch:16},{wch:16},{wch:16},{wch:20},{wch:8},{wch:14},{wch:12},{wch:16},{wch:14},{wch:30},{wch:30},{wch:40}];
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'کاربران');
+  XLSX.writeFile(wb,'qazakh_users_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  showToast('فایل اکسل دانلود شد','success');
+}
+function exportCSV(){
+  const users=APP.adminUsersCache||[];if(!users.length){showToast('داده‌ای نیست','error');return}
+  const h=['کد ملی','نام','نام خانوادگی','نام پدر','نام پدربزرگ','جنسیت','سال تولد','تحصیلات','اشتغال','شغل','شهر','توضیحات','آدای','سرطایفه','طایفه','سرپرست','موبایل','مهارت فنی','مهارت ورزشی','افتخارات'];
+  const r=users.map(u=>[u.nationalId,u.firstName,u.lastName,u.fatherName,u.grandFatherName,u.gender,u.birthYear,u.education,u.employment,u.jobTitle,u.city,u.cityDesc,u.isAdai,u.sartaife,u.tayefe,u.isFamilyHead?'بله':'خیر',u.phone,(u.techSkills||[]).join('|'),(u.sportSkills||[]).join('|'),u.achievements||'']);
+  const csv='\uFEFF'+[h,...r].map(r=>r.map(c=>'"'+(c||'')+'"').join(',')).join('\n');
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download='qazakh_'+new Date().toISOString().slice(0,10)+'.csv';a.click();showToast('CSV دانلود شد','success');
+}
+
+function renderAdminCharts(c){
+  return apiSafe('getStats',{},'در حال بارگذاری آمار...').then(stats=>{
+    c.innerHTML=`<div id="aSR" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8"></div><div id="aCG" class="grid grid-cols-1 lg:grid-cols-2 gap-6"></div>`;
+    renderStatsFromStats('aSR',stats);renderChartsFromStats('aCG',stats);
+  }).catch(()=>{});
+}
+
+async function renderAdminAdmins(c){
+  try{
+    const admins=await apiSafe('adminGetAdmins',{},'در حال بارگذاری...');
+    APP._adminsCache=admins;
+    c.innerHTML=`<div class="flex justify-between items-center mb-4"><h3 class="font-bold">مدیریت ادمین‌ها</h3><button class="btn-gold btn-sm" onclick="showAddA()"><i class="fas fa-plus ml-1"></i>افزودن</button></div><div class="table-container"><table><thead><tr><th>نام</th><th>نام کاربری</th><th>وضعیت</th><th>عملیات</th></tr></thead><tbody>${admins.map(a=>{const isD=a.username==='admin';return`<tr><td class="font-bold">${a.name}${isD?' <span class="badge badge-gold">اصلی</span>':''}</td><td dir="ltr">${a.username}</td><td>${a.active?'<span class="badge badge-teal">فعال</span>':'<span class="badge badge-danger">غیرفعال</span>'}</td><td><div class="flex gap-1"><button class="btn-outline btn-sm" style="padding:4px 10px;font-size:11px" onclick="showEditA('${a.id}')"><i class="fas fa-edit"></i></button>${!isD?`<button class="btn-${a.active?'danger':'outline'} btn-sm" style="padding:4px 10px;font-size:11px" onclick="togA('${a.id}')">${a.active?'<i class="fas fa-ban"></i>':'<i class="fas fa-check"></i>'}</button>`:''}</div></td></tr>`}).join('')}</tbody></table></div>`;
+  }catch(e){}
+}
+function showAddA(){showModal(`<h3 class="text-lg font-bold text-gold mb-4">افزودن ادمین</h3><div class="space-y-3"><div><label class="block text-sm text-muted mb-1">نام</label><input id="naN" class="input-field"></div><div><label class="block text-sm text-muted mb-1">نام کاربری</label><input id="naU" class="input-field" dir="ltr"></div><div><label class="block text-sm text-muted mb-1">رمز عبور</label><input id="naP" class="input-field" dir="ltr"></div><div class="flex gap-2 pt-2"><button class="btn-gold flex-1" onclick="saveNA()">ذخیره</button><button class="btn-outline flex-1" onclick="closeModal()">انصراف</button></div></div>`)}
+async function saveNA(){
+  const n=document.getElementById('naN').value.trim(),u=document.getElementById('naU').value.trim(),p=document.getElementById('naP').value;if(!n||!u||!p){showToast('همه فیلدها الزامی','error');return}
+  try{await apiSafe('adminAddAdmin',{name:n,username:u,password:p},'در حال افزودن...');closeModal();showToast('اضافه شد','success');renderAdminPanel()}catch(e){}
+}
+function showEditA(id){const a=(APP._adminsCache||[]).find(x=>x.id===id);if(!a)return;showModal(`<h3 class="text-lg font-bold text-gold mb-4">ویرایش ادمین</h3><div class="space-y-3"><div><label class="block text-sm text-muted mb-1">نام</label><input id="eaN" class="input-field" value="${a.name}"></div><div><label class="block text-sm text-muted mb-1">نام کاربری</label><input id="eaU" class="input-field" value="${a.username}" dir="ltr"></div><div><label class="block text-sm text-muted mb-1">رمز جدید (خالی=بدون تغییر)</label><input id="eaP" class="input-field" dir="ltr"></div><div class="flex gap-2 pt-2"><button class="btn-gold flex-1" onclick="saveEA('${id}')">ذخیره</button><button class="btn-outline flex-1" onclick="closeModal()">انصراف</button></div></div>`)}
+async function saveEA(id){
+  const name=document.getElementById('eaN').value.trim(),username=document.getElementById('eaU').value.trim(),password=document.getElementById('eaP').value;
+  try{await apiSafe('adminUpdateAdmin',{id:id,name:name,username:username,password:password},'در حال ذخیره...');closeModal();showToast('ذخیره شد','success');renderAdminPanel()}catch(e){}
+}
+async function togA(id){try{await apiSafe('adminToggleAdmin',{id:id},'در حال ثبت...');showToast('انجام شد','success');renderAdminPanel()}catch(e){}}
+
+// ---- تب داده‌های پایه ----
+function renderAdminLists(c){
+  const sections=[
+    {key:'educations',label:'میزان تحصیلات',icon:'fa-graduation-cap',hasSub:false},
+    {key:'employments',label:'نوع اشتغال',icon:'fa-briefcase',hasSub:false},
+    {key:'cities',label:'شهرستان محل سکونت',icon:'fa-location-dot',hasSub:false},
+    {key:'techSkills',label:'مهارت‌های فنی',icon:'fa-screwdriver-wrench',hasSub:false},
+    {key:'sportSkills',label:'مهارت‌های ورزشی',icon:'fa-futbol',hasSub:false},
+    {key:'sartaife',label:'سرطایفه‌ها (و طوایف زیرمجموعه)',icon:'fa-sitemap',hasSub:true}
+  ];
+  let h=`<div class="mb-4 p-4 rounded-xl bg-gold/5 border border-gold/20">
+    <p class="text-gold text-sm font-bold mb-1"><i class="fas fa-info-circle ml-1"></i>توجه</p>
+    <p class="text-muted text-xs leading-6">در این بخش می‌توانید تمام فهرست‌های پایه را مدیریت کنید. هر آیتم قابل <span class="text-gold">افزودن</span>، <span class="text-gold">ویرایش</span> و <span class="text-gold">حذف</span> است. برای سرطایفه‌ها، ابتدا سرطایفه را تعریف کنید و سپس طایفه‌های زیرمجموعه هر سرطایفه را اضافه نمایید.</p>
+    <p class="text-danger text-xs mt-2"><i class="fas fa-exclamation-triangle ml-1"></i>تغییر در فهرست‌ها روی داده‌های قبلی تأثیری ندارد، اما از این پس فرم‌ها با فهرست جدید نمایش داده می‌شوند.</p>
+  </div>`;
+  sections.forEach(sec=>{
+    const list=APP.cache[sec.key]||[];
+    const subMap=sec.hasSub?getTayefeMap():null;
+    h+=`<div class="list-section"><h4><i class="fas ${sec.icon}"></i>${sec.label}<button class="btn-gold btn-sm mr-auto" style="padding:3px 12px;font-size:11px" onclick="addLI('${sec.key}')"><i class="fas fa-plus ml-1"></i>افزودن</button></h4>`;
+    if(!list.length){h+=`<p class="text-muted text-sm">هیچ آیتمی تعریف نشده. روی "افزودن" کلیک کنید.</p>`}
+    else{
+      h+=`<div class="flex flex-wrap">`;
+      list.forEach((item,idx)=>{h+=`<div class="list-item">${item}<i class="fas fa-pen edit-btn" title="ویرایش" onclick="editLI('${sec.key}',${idx})"></i><i class="fas fa-times del-btn" title="حذف" onclick="rmLI('${sec.key}',${idx})"></i></div>`});
+      h+=`</div>`;
+    }
+    if(sec.hasSub){
+      h+=`<div class="mt-4 pr-4 border-r-2 border-gold/20">`;
+      if(!list.length){h+=`<p class="text-muted text-xs">ابتدا سرطایفه‌ها را اضافه کنید.</p>`}
+      else{
+        list.forEach(st=>{
+          const subs=subMap[st]||[];
+          h+=`<div class="mb-3"><div class="flex items-center gap-2 mb-1"><span class="text-gold text-xs font-bold">${st}</span><button class="text-teal text-xs cursor-pointer hover:underline" onclick="addSub('${st}')"><i class="fas fa-plus ml-1"></i>افزودن طایفه</button></div>`;
+          if(subs.length){
+            h+=`<div class="flex flex-wrap pr-4">`;
+            subs.forEach((sub,sidx)=>{h+=`<div class="list-item" style="border-color:#238470">${sub}<i class="fas fa-pen edit-btn" title="ویرایش" onclick="editSub('${st}',${sidx})"></i><i class="fas fa-times del-btn" title="حذف" onclick="rmSub('${st}',${sidx})"></i></div>`});
+            h+=`</div>`;
+          }else{h+=`<p class="text-muted text-xs pr-4">طایفه‌ای تعریف نشده</p>`}
+          h+=`</div>`;
+        });
+      }
+      h+=`</div>`;
+    }
+    h+=`</div>`;
+  });
+  c.innerHTML=h;
+}
+
+async function persistList(key){await apiSafe('adminSaveList',{listKey:key,items:APP.cache[key]},'در حال ذخیره...')}
+async function persistTayefeMap(){await apiSafe('adminSaveTayefeMap',{tayefeMap:APP.cache.tayefeMap},'در حال ذخیره...')}
+
+function addLI(key){
+  showModal(`<h3 class="text-lg font-bold text-gold mb-4">افزودن آیتم جدید</h3>
+    <div class="space-y-3"><input id="nli" class="input-field" placeholder="عنوان جدید">
+    <div class="flex gap-2"><button class="btn-gold flex-1" onclick="saveLI('${key}')">افزودن</button><button class="btn-outline flex-1" onclick="closeModal()">انصراف</button></div></div>`);
+}
+async function saveLI(key){
+  const v=document.getElementById('nli').value.trim();if(!v){showToast('عنوان وارد کنید','error');return}
+  const list=APP.cache[key]||(APP.cache[key]=[]);if(list.includes(v)){showToast('تکراری','error');return}
+  list.push(v);try{await persistList(key);closeModal();showToast('اضافه شد','success');renderAdminPanel()}catch(e){list.pop()}
+}
+function editLI(key,idx){
+  const list=APP.cache[key]||[];if(idx<0||idx>=list.length)return;
+  showModal(`<h3 class="text-lg font-bold text-gold mb-4">ویرایش آیتم</h3>
+    <div class="space-y-3"><input id="eli" class="input-field" value="${list[idx]}">
+    <div class="flex gap-2"><button class="btn-gold flex-1" onclick="saveELI('${key}',${idx})">ذخیره</button><button class="btn-outline flex-1" onclick="closeModal()">انصراف</button></div></div>`);
+}
+async function saveELI(key,idx){
+  const v=document.getElementById('eli').value.trim();if(!v){showToast('عنوان وارد کنید','error');return}
+  const list=APP.cache[key];const old=list[idx];list[idx]=v;
+  try{await persistList(key);closeModal();showToast('ویرایش شد','success');renderAdminPanel()}catch(e){list[idx]=old}
+}
+async function rmLI(key,idx){
+  if(!confirm('حذف شود؟'))return;
+  const list=APP.cache[key];const removed=list.splice(idx,1)[0];
+  if(key==='sartaife'){delete APP.cache.tayefeMap[removed]}
+  try{await persistList(key);showToast('حذف شد','success');renderAdminPanel()}catch(e){list.splice(idx,0,removed)}
+}
+
+// طوایفه‌های زیرمجموعه
+function addSub(st){
+  showModal(`<h3 class="text-lg font-bold text-gold mb-4">افزودن طایفه به «${st}»</h3>
+    <div class="space-y-3"><input id="nsub" class="input-field" placeholder="نام طایفه">
+    <div class="flex gap-2"><button class="btn-gold flex-1" onclick="saveSub('${st}')">افزودن</button><button class="btn-outline flex-1" onclick="closeModal()">انصراف</button></div></div>`);
+}
+async function saveSub(st){
+  const v=document.getElementById('nsub').value.trim();if(!v){showToast('نام وارد کنید','error');return}
+  const map=APP.cache.tayefeMap;if(!map[st])map[st]=[];if(map[st].includes(v)){showToast('تکراری','error');return}
+  map[st].push(v);try{await persistTayefeMap();closeModal();showToast('اضافه شد','success');renderAdminPanel()}catch(e){map[st].pop()}
+}
+function editSub(st,idx){
+  const map=APP.cache.tayefeMap;const list=map[st]||[];if(idx<0||idx>=list.length)return;
+  showModal(`<h3 class="text-lg font-bold text-gold mb-4">ویرایش طایفه</h3>
+    <div class="space-y-3"><input id="esub" class="input-field" value="${list[idx]}">
+    <div class="flex gap-2"><button class="btn-gold flex-1" onclick="saveESub('${st}',${idx})">ذخیره</button><button class="btn-outline flex-1" onclick="closeModal()">انصراف</button></div></div>`);
+}
+async function saveESub(st,idx){
+  const v=document.getElementById('esub').value.trim();if(!v){showToast('نام وارد کنید','error');return}
+  const map=APP.cache.tayefeMap;const old=map[st][idx];map[st][idx]=v;
+  try{await persistTayefeMap();closeModal();showToast('ویرایش شد','success');renderAdminPanel()}catch(e){map[st][idx]=old}
+}
+async function rmSub(st,idx){
+  if(!confirm('حذف شود؟'))return;const map=APP.cache.tayefeMap;const removed=map[st].splice(idx,1)[0];
+  try{await persistTayefeMap();showToast('حذف شد','success');renderAdminPanel()}catch(e){map[st].splice(idx,0,removed)}
+}
+
+// ---- سؤالات ----
+async function renderAdminQuestions(c){
+  try{
+    const qs=await apiSafe('adminGetQuestions',{},'در حال بارگذاری سؤالات...');
+    APP._questionsCache=qs;
+    let h=`<div class="flex justify-between items-center mb-4"><h3 class="font-bold">سؤالات تأیید هویت</h3><button class="btn-gold btn-sm" onclick="showAddQ()"><i class="fas fa-plus ml-1"></i>افزودن</button></div><p class="text-muted text-sm mb-4">گزینه هایلایت‌شده = پاسخ صحیح</p><div class="space-y-3">`;
+    qs.forEach((q,i)=>{h+=`<div class="card"><div class="flex justify-between items-start mb-2"><span class="badge badge-gold">سؤال ${i+1}</span><div class="flex gap-1"><button class="btn-outline btn-sm" style="padding:4px 10px;font-size:11px" onclick="showEditQ('${q.id}')"><i class="fas fa-edit"></i></button><button class="btn-danger btn-sm" style="padding:4px 10px;font-size:11px" onclick="delQ('${q.id}')"><i class="fas fa-trash"></i></button></div></div><p class="font-bold text-sm mb-2">${q.q}</p><div class="grid grid-cols-2 gap-2">${q.opts.map((o,oi)=>`<div class="text-xs p-2 rounded-lg ${oi===q.correct?'bg-teal/10 border border-teal/30 text-teal':'bg-bg/50 border border-border text-muted'}">${oi===q.correct?'<i class="fas fa-check ml-1"></i>':''}${o}</div>`).join('')}</div></div>`});
+    h+='</div>';c.innerHTML=h;
+  }catch(e){}
+}
+function showAddQ(){showModal(`<h3 class="text-lg font-bold text-gold mb-4">افزودن سؤال</h3><p class="text-muted text-xs mb-3">گزینه صحیح را از فهرست کشویی انتخاب کنید</p><div class="space-y-3"><div><label class="block text-sm text-muted mb-1">متن</label><input id="nqT" class="input-field"></div>${[0,1,2,3].map(i=>`<div><label class="block text-sm text-muted mb-1">گزینه ${i+1}</label><input id="nqO${i}" class="input-field"></div>`).join('')}<div><label class="block text-sm text-muted mb-1">گزینه صحیح</label><select id="nqC" class="input-field"><option value="0">گزینه ۱</option><option value="1">گزینه ۲</option><option value="2">گزینه ۳</option><option value="3">گزینه ۴</option></select></div><div class="flex gap-2 pt-2"><button class="btn-gold flex-1" onclick="saveNQ()">ذخیره</button><button class="btn-outline flex-1" onclick="closeModal()">انصراف</button></div></div>`)}
+async function saveNQ(){
+  const q=document.getElementById('nqT').value.trim(),o=[0,1,2,3].map(i=>document.getElementById('nqO'+i).value.trim()),correct=parseInt(document.getElementById('nqC').value);
+  if(!q||o.some(x=>!x)){showToast('همه فیلدها الزامی','error');return}
+  try{await apiSafe('adminAddQuestion',{q:q,opts:o,correct:correct},'در حال افزودن...');closeModal();showToast('اضافه شد','success');renderAdminPanel()}catch(e){}
+}
+function showEditQ(id){const q=(APP._questionsCache||[]).find(x=>x.id===id);if(!q)return;showModal(`<h3 class="text-lg font-bold text-gold mb-4">ویرایش سؤال</h3><div class="space-y-3"><div><label class="block text-sm text-muted mb-1">متن</label><input id="eqT" class="input-field" value="${q.q}"></div>${q.opts.map((o,i)=>`<div><label class="block text-sm text-muted mb-1">گزینه ${i+1}</label><input id="eqO${i}" class="input-field" value="${o}"></div>`).join('')}<div><label class="block text-sm text-muted mb-1">گزینه صحیح</label><select id="eqC" class="input-field">${[0,1,2,3].map(i=>`<option value="${i}" ${q.correct===i?'selected':''}>گزینه ${i+1}</option>`).join('')}</select></div><div class="flex gap-2 pt-2"><button class="btn-gold flex-1" onclick="saveEQ('${id}')">ذخیره</button><button class="btn-outline flex-1" onclick="closeModal()">انصراف</button></div></div>`)}
+async function saveEQ(id){
+  const q=document.getElementById('eqT').value.trim(),o=[0,1,2,3].map(i=>document.getElementById('eqO'+i).value.trim()),correct=parseInt(document.getElementById('eqC').value);
+  try{await apiSafe('adminUpdateQuestion',{id:id,q:q,opts:o,correct:correct},'در حال ذخیره...');closeModal();showToast('ذخیره شد','success');renderAdminPanel()}catch(e){}
+}
+async function delQ(id){if(!confirm('حذف شود؟'))return;try{await apiSafe('adminDeleteQuestion',{id:id},'در حال حذف...');showToast('حذف شد','success');renderAdminPanel()}catch(e){}}
+
+// ==================== مودال ====================
+function showModal(h){document.getElementById('modalContent').innerHTML=h;document.getElementById('modalOverlay').style.display='flex'}
+function closeModal(){document.getElementById('modalOverlay').style.display='none'}
+
+// ==================== راه‌اندازی ====================
+if(!CONFIG.API_URL||CONFIG.API_URL.indexOf('PUT_YOUR')===0){document.getElementById('configWarning').style.display='block'}
+</script>
+</body>
+</html>
