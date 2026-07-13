@@ -87,6 +87,17 @@ td{padding:8px 12px;border-bottom:1px solid #21262d;white-space:nowrap}tr:hover 
 <div id="loadingOverlay"><div class="spinner"></div><div class="msg" id="loadingMsg">در حال ارتباط با سرور...</div></div>
 <div id="configWarning"><i class="fas fa-triangle-exclamation ml-1"></i>آدرس API تنظیم نشده است. در ابتدای کد، مقدار CONFIG.API_URL را با آدرس Web App اپس‌اسکریپت خود جایگزین کنید.</div>
 
+<button id="debugToggleBtn" onclick="toggleDebugPanel()" style="position:fixed;bottom:14px;left:14px;z-index:9996;background:#161b22;border:1px solid #30363d;color:#8b949e;border-radius:20px;padding:8px 14px;font-size:12px;cursor:pointer;font-family:Vazirmatn">
+  <i class="fas fa-bug ml-1"></i>گزارش فنی <span id="debugCount" style="display:none;background:#da3633;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-right:4px"></span>
+</button>
+<div id="debugPanel" style="display:none;position:fixed;bottom:56px;left:14px;z-index:9996;width:min(92vw,480px);max-height:60vh;background:#0d1117;border:1px solid #30363d;border-radius:10px;padding:12px;overflow-y:auto;font-family:monospace;font-size:11px;direction:ltr;text-align:left;box-shadow:0 8px 30px rgba(0,0,0,.5)">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;direction:rtl">
+    <span style="color:#d4a843;font-family:Vazirmatn;font-weight:700">گزارش تماس‌های اخیر با سرور</span>
+    <div><button onclick="copyDebugLog()" style="background:#238470;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:Vazirmatn">کپی گزارش</button></div>
+  </div>
+  <div id="debugPanelBody" style="color:#8b949e;line-height:1.6"></div>
+</div>
+
 <nav id="topNav" class="fixed top-0 right-0 left-0 z-50 bg-bg/90 backdrop-blur-md border-b border-border" style="display:none">
   <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
     <div class="flex items-center gap-3 cursor-pointer" onclick="navigateTo('landing')">
@@ -265,7 +276,7 @@ td{padding:8px 12px;border-bottom:1px solid #21262d;white-space:nowrap}tr:hover 
 // تنظیمات — آدرس Web App اپس‌اسکریپت خود را اینجا جایگزین کنید
 // ============================================================================
 const CONFIG={
-  API_URL:'https://script.google.com/macros/s/AKfycbyK1xACt9Qbkzd0PjYhbk2WVeSY7j_qAYwWG9b9qcs_2zXCld60AVaqTHYuI-R7fWLV/exec'
+  API_URL:'https://script.google.com/macros/s/AKfycbytxap1sObJTXolTFDfPXgMzIGJXIvKRxSWG5vgfCfsnDHc-NEJ5dAO97YNaOmdZhXW/exec'
 };
 
 // ==================== وضعیت برنامه ====================
@@ -282,21 +293,68 @@ function showToast(m,t='info'){const e=document.createElement('div');e.className
 function showLoading(msg){document.getElementById('loadingMsg').textContent=msg||'در حال ارتباط با سرور...';document.getElementById('loadingOverlay').classList.add('active')}
 function hideLoading(){document.getElementById('loadingOverlay').classList.remove('active')}
 
+// ==================== گزارش فنی (بدون نیاز به Console مرورگر) ====================
+APP.debugLog=[];
+function dlog(entry){
+  entry.t=new Date().toLocaleTimeString('fa-IR');
+  APP.debugLog.unshift(entry);
+  if(APP.debugLog.length>40)APP.debugLog.pop();
+  const c=document.getElementById('debugCount');if(c){c.style.display='inline';c.textContent=APP.debugLog.length}
+  renderDebugPanel();
+}
+function renderDebugPanel(){
+  const b=document.getElementById('debugPanelBody');if(!b)return;
+  if(!APP.debugLog.length){b.innerHTML='هنوز تماسی با سرور ثبت نشده.';return}
+  b.innerHTML=APP.debugLog.map(e=>{
+    const color=e.status==='error'?'#da3633':(e.status==='sent'?'#8b949e':'#2ea58e');
+    return `<div style="border-bottom:1px solid #21262d;padding:6px 0">
+      <div style="color:${color}">[${e.t}] ${e.status.toUpperCase()} — ${e.action}</div>
+      ${e.url?`<div style="opacity:.7">url: ${e.url}</div>`:''}
+      ${e.payload?`<div style="opacity:.7">payload: ${e.payload}</div>`:''}
+      ${e.detail?`<div style="opacity:.9">${e.detail}</div>`:''}
+    </div>`;
+  }).join('');
+}
+function toggleDebugPanel(){const p=document.getElementById('debugPanel');p.style.display=p.style.display==='none'?'block':'none';renderDebugPanel()}
+function copyDebugLog(){
+  const text=APP.debugLog.slice().reverse().map(e=>`[${e.t}] ${e.status.toUpperCase()} ${e.action}${e.url?(' | url: '+e.url):''}${e.payload?(' | payload: '+e.payload):''}${e.detail?(' | '+e.detail):''}`).join('\n');
+  const full='CONFIG.API_URL: '+CONFIG.API_URL+'\nمرورگر: '+navigator.userAgent+'\n\n'+(text||'(خالی)');
+  navigator.clipboard.writeText(full).then(()=>showToast('گزارش کپی شد — بفرستید','success')).catch(()=>{
+    const ta=document.createElement('textarea');ta.value=full;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');showToast('گزارش کپی شد','success')}catch(e){showToast('کپی نشد؛ گزارش را از پنل به‌صورت دستی انتخاب کنید','error')}
+    ta.remove();
+  });
+}
+
 // ==================== ارتباط با API (اپس‌اسکریپت) ====================
 async function api(action,payload={}){
   if(!CONFIG.API_URL||CONFIG.API_URL.indexOf('PUT_YOUR')===0){
     document.getElementById('configWarning').style.display='block';
+    dlog({action,status:'error',detail:'آدرس API تنظیم نشده است (CONFIG.API_URL)'});
     throw new Error('آدرس API تنظیم نشده است.');
   }
   const body=Object.assign({action},payload);
   if(APP.adminToken) body.token=APP.adminToken;
+  const payloadPreview=JSON.stringify(Object.assign({},payload,payload&&payload.password?{password:'***'}:{})).slice(0,200);
+  dlog({action,status:'sent',url:CONFIG.API_URL,payload:payloadPreview});
   let res;
   try{
     res=await fetch(CONFIG.API_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(body)});
-  }catch(e){throw new Error('اتصال به سرور برقرار نشد. اتصال اینترنت خود را بررسی کنید.')}
+  }catch(e){
+    dlog({action,status:'error',detail:'fetch ناموفق (شبکه/CORS): '+e.message});
+    throw new Error('اتصال به سرور برقرار نشد. اتصال اینترنت خود را بررسی کنید.');
+  }
+  dlog({action,status:'sent',detail:'HTTP status: '+res.status});
   let json;
-  try{json=await res.json()}catch(e){throw new Error('پاسخ سرور نامعتبر بود.')}
-  if(!json.ok){throw new Error(json.error||'خطای ناشناخته سرور')}
+  try{json=await res.json()}catch(e){
+    dlog({action,status:'error',detail:'پاسخ سرور JSON معتبر نبود (HTTP '+res.status+')'});
+    throw new Error('پاسخ سرور نامعتبر بود.');
+  }
+  if(!json.ok){
+    dlog({action,status:'error',detail:'سرور خطا داد: '+(json.error||'نامشخص')});
+    throw new Error(json.error||'خطای ناشناخته سرور');
+  }
+  dlog({action,status:'ok',detail:'موفق'});
   return json.data;
 }
 async function apiSafe(action,payload,loadingMsg){
@@ -352,10 +410,13 @@ function updateNavLinks(v){
 }
 
 // ==================== OTP ====================
+function normalizeDigits(s){
+  return String(s||'').replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+}
 async function sendOTP(){
-  const nid=document.getElementById('regNationalId').value.trim(),phone=document.getElementById('regPhone').value.trim();
-  if(!/^\d{10}$/.test(nid)){showToast('کد ملی باید ۱۰ رقم باشد','error');return}
-  if(!/^09\d{9}$/.test(phone)){showToast('شماره موبایل نامعتبر','error');return}
+  const nid=normalizeDigits(document.getElementById('regNationalId').value.trim()),phone=normalizeDigits(document.getElementById('regPhone').value.trim());
+  if(!/^\d{10}$/.test(nid)){showToast('کد ملی باید ۱۰ رقم باشد','error');dlog({action:'startRegistration',status:'error',detail:'اعتبارسنجی سمت کاربر رد شد: کد ملی نامعتبر ("'+nid+'")'});return}
+  if(!/^09\d{9}$/.test(phone)){showToast('شماره موبایل نامعتبر','error');dlog({action:'startRegistration',status:'error',detail:'اعتبارسنجی سمت کاربر رد شد: موبایل نامعتبر ("'+phone+'")'});return}
   try{
     const d=await apiSafe('startRegistration',{nationalId:nid,phone:phone},'در حال ارسال کد...');
     APP.tempPhone=phone;APP.tempNID=nid;APP.otpPurpose=d.purpose;APP.tempOTP=d.otp;
@@ -363,8 +424,8 @@ async function sendOTP(){
   }catch(e){}
 }
 async function sendLoginOTP(){
-  const phone=document.getElementById('loginPhone').value.trim();
-  if(!/^09\d{9}$/.test(phone)){showToast('شماره موبایل نامعتبر','error');return}
+  const phone=normalizeDigits(document.getElementById('loginPhone').value.trim());
+  if(!/^09\d{9}$/.test(phone)){showToast('شماره موبایل نامعتبر','error');dlog({action:'startLogin',status:'error',detail:'اعتبارسنجی سمت کاربر رد شد: موبایل نامعتبر ("'+phone+'")'});return}
   try{
     const d=await apiSafe('startLogin',{phone:phone},'در حال ارسال کد...');
     APP.tempPhone=phone;APP.otpPurpose='login';APP.tempOTP=d.otp;
@@ -389,9 +450,9 @@ function initOTPView(){
   for(let i=0;i<5;i++){
     const inp=document.createElement('input');inp.type='text';inp.maxLength=1;inp.inputMode='numeric';
     inp.className='input-field text-center text-xl font-bold';inp.style.cssText='width:48px;padding:12px 0';
-    inp.addEventListener('input',function(){this.value=this.value.replace(/\D/g,'');if(this.value&&i<4)c.children[i+1].focus()});
+    inp.addEventListener('input',function(){this.value=normalizeDigits(this.value).replace(/\D/g,'');if(this.value&&i<4)c.children[i+1].focus()});
     inp.addEventListener('keydown',function(e){if(e.key==='Backspace'&&!this.value&&i>0)c.children[i-1].focus();if(e.key==='Enter')verifyOTP()});
-    inp.addEventListener('paste',function(e){e.preventDefault();const p=(e.clipboardData||window.clipboardData).getData('text').replace(/\D/g,'');for(let j=0;j<Math.min(p.length,5);j++)c.children[j].value=p[j];c.children[Math.min(p.length,4)].focus()});
+    inp.addEventListener('paste',function(e){e.preventDefault();const p=normalizeDigits((e.clipboardData||window.clipboardData).getData('text')).replace(/\D/g,'');for(let j=0;j<Math.min(p.length,5);j++)c.children[j].value=p[j];c.children[Math.min(p.length,4)].focus()});
     c.appendChild(inp);
   }
   c.children[0].focus();document.getElementById('resendBtn').style.display='none';document.getElementById('otpTimer').style.display='inline';startOTPTimer();
