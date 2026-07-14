@@ -91,12 +91,14 @@ td{padding:8px 12px;border-bottom:1px solid #21262d;white-space:nowrap}tr:hover 
   <i class="fas fa-bug ml-1"></i>گزارش فنی <span id="debugCount" style="display:none;background:#da3633;color:#fff;border-radius:10px;padding:1px 6px;font-size:10px;margin-right:4px"></span>
 </button>
 <div id="debugPanel" style="display:none;position:fixed;bottom:56px;left:14px;z-index:9996;width:min(92vw,480px);max-height:60vh;background:#0d1117;border:1px solid #30363d;border-radius:10px;padding:12px;overflow-y:auto;font-family:monospace;font-size:11px;direction:ltr;text-align:left;box-shadow:0 8px 30px rgba(0,0,0,.5)">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;direction:rtl">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;direction:rtl">
     <span style="color:#d4a843;font-family:Vazirmatn;font-weight:700">گزارش تماس‌های اخیر با سرور</span>
     <div><button onclick="copyDebugLog()" style="background:#238470;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:11px;cursor:pointer;font-family:Vazirmatn">کپی گزارش</button></div>
   </div>
+  <div style="direction:rtl;color:#2ea58e;font-family:Vazirmatn;font-size:11px;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid #21262d">نسخه‌ی فایل بارگذاری‌شده در همین لحظه: <b id="feb">?</b></div>
   <div id="debugPanelBody" style="color:#8b949e;line-height:1.6"></div>
 </div>
+
 
 <nav id="topNav" class="fixed top-0 right-0 left-0 z-50 bg-bg/90 backdrop-blur-md border-b border-border" style="display:none">
   <div class="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
@@ -278,6 +280,7 @@ td{padding:8px 12px;border-bottom:1px solid #21262d;white-space:nowrap}tr:hover 
 const CONFIG={
   API_URL:'https://script.google.com/macros/s/AKfycbytxap1sObJTXolTFDfPXgMzIGJXIvKRxSWG5vgfCfsnDHc-NEJ5dAO97YNaOmdZhXW/exec' // مثال: https://script.google.com/macros/s/AKfycb.../exec
 };
+const FRONTEND_BUILD_TAG='2026-07-14-relation-tree-2'; // برای اطمینان از این‌که نسخه‌ی جدید فایل واقعاً روی سایت بارگذاری شده
 
 // ==================== وضعیت برنامه ====================
 let APP={currentView:'landing',tempPhone:'',tempNID:'',tempOTP:'',otpTimerInterval:null,otpPurpose:'register',
@@ -323,9 +326,15 @@ function renderDebugPanel(){
   }).join('');
 }
 function toggleDebugPanel(){const p=document.getElementById('debugPanel');p.style.display=p.style.display==='none'?'block':'none';renderDebugPanel()}
+window.addEventListener('error',function(e){
+  dlog({action:'JS-ERROR',status:'error',detail:(e.message||'خطای نامشخص')+' — '+(e.filename?e.filename.split('/').pop():'')+':'+(e.lineno||'')});
+});
+window.addEventListener('unhandledrejection',function(e){
+  dlog({action:'PROMISE-ERROR',status:'error',detail:(e.reason&&e.reason.message)?e.reason.message:String(e.reason)});
+});
 function copyDebugLog(){
   const text=APP.debugLog.slice().reverse().map(e=>`[${e.t}] ${e.status.toUpperCase()} ${e.action}${e.url?(' | url: '+e.url):''}${e.payload?(' | payload: '+e.payload):''}${e.detail?(' | '+e.detail):''}`).join('\n');
-  const full='CONFIG.API_URL: '+CONFIG.API_URL+'\nمرورگر: '+navigator.userAgent+'\n\n'+(text||'(خالی)');
+  const full='FRONTEND_BUILD_TAG: '+FRONTEND_BUILD_TAG+'\nCONFIG.API_URL: '+CONFIG.API_URL+'\nمرورگر: '+navigator.userAgent+'\n\n'+(text||'(خالی)');
   navigator.clipboard.writeText(full).then(()=>showToast('گزارش کپی شد — بفرستید','success')).catch(()=>{
     const ta=document.createElement('textarea');ta.value=full;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();
     try{document.execCommand('copy');showToast('گزارش کپی شد','success')}catch(e){showToast('کپی نشد؛ گزارش را از پنل به‌صورت دستی انتخاب کنید','error')}
@@ -1081,6 +1090,7 @@ function showModal(h){document.getElementById('modalContent').innerHTML=h;docume
 function closeModal(){document.getElementById('modalOverlay').style.display='none'}
 
 // ==================== راه‌اندازی ====================
+document.getElementById('feb').textContent=FRONTEND_BUILD_TAG;
 if(!CONFIG.API_URL||CONFIG.API_URL.indexOf('PUT_YOUR')===0){document.getElementById('configWarning').style.display='block'}
 </script>
 </body>
