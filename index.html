@@ -276,7 +276,7 @@ td{padding:8px 12px;border-bottom:1px solid #21262d;white-space:nowrap}tr:hover 
 // تنظیمات — آدرس Web App اپس‌اسکریپت خود را اینجا جایگزین کنید
 // ============================================================================
 const CONFIG={
-  API_URL:'https://script.google.com/macros/s/AKfycbytxap1sObJTXolTFDfPXgMzIGJXIvKRxSWG5vgfCfsnDHc-NEJ5dAO97YNaOmdZhXW/exec'
+  API_URL:'https://script.google.com/macros/s/AKfycbytxap1sObJTXolTFDfPXgMzIGJXIvKRxSWG5vgfCfsnDHc-NEJ5dAO97YNaOmdZhXW/exec' // مثال: https://script.google.com/macros/s/AKfycb.../exec
 };
 
 // ==================== وضعیت برنامه ====================
@@ -284,9 +284,16 @@ let APP={currentView:'landing',tempPhone:'',tempNID:'',tempOTP:'',otpTimerInterv
   currentUser:null,currentAdmin:null,adminToken:null,
   selectedGender:'',selectedFamilyHead:'',selectedEducation:'',selectedEmployment:'',
   selectedCity:'',selectedTechSkills:[],selectedSportSkills:[],selectedSartaife:'',selectedTayefe:'',
-  selectedHeadNID:'',selectedHeadName:'',selectedIsAdai:'',achievements:'',
-  verifyQuestions:[],chartInstances:[],adminTab:'lists',
+  selectedHeadNID:'',selectedHeadName:'',selectedIsAdai:'',selectedRelation:'',achievements:'',
+  verifyQuestions:[],chartInstances:[],adminTab:'users',
   cache:null,bootstrapped:false,adminUsersCache:null};
+
+const RELATION_OPTIONS=['فرزند','همسر','پدر','مادر','پدربزرگ','مادربزرگ','خواهر','برادر','سایر'];
+const INDEPENDENT_TRIBE_RELATIONS=['همسر','مادر','مادربزرگ'];
+function updateTribeVisibility(p){
+  const show=(APP.selectedFamilyHead==='بله')||INDEPENDENT_TRIBE_RELATIONS.includes(APP.selectedRelation);
+  const el=document.getElementById(p+'tribeCard');if(el)el.style.display=show?'block':'none';
+}
 
 function genId(){return Date.now().toString(36)+Math.random().toString(36).substr(2,5)}
 function showToast(m,t='info'){const e=document.createElement('div');e.className='toast toast-'+t;e.textContent=m;document.body.appendChild(e);setTimeout(()=>{e.style.opacity='0';e.style.transition='opacity .3s';setTimeout(()=>e.remove(),300)},3500)}
@@ -503,17 +510,20 @@ async function checkVerifyAnswers(){
 function buildForm(mode){
   const u=mode==='edit'?APP.currentUser:{};
   const isEdit=mode==='edit';const p=isEdit?'e':'r';
-  if(!isEdit){APP.selectedGender='';APP.selectedFamilyHead='';APP.selectedEducation='';APP.selectedEmployment='';APP.selectedCity='';APP.selectedTechSkills=[];APP.selectedSportSkills=[];APP.selectedSartaife='';APP.selectedTayefe='';APP.selectedIsAdai='';APP.achievements='';APP.selectedHeadNID='';APP.selectedHeadName=''}
-  else{APP.selectedGender=u.gender||'';APP.selectedFamilyHead=u.isFamilyHead?'بله':'خیر';APP.selectedEducation=u.education||'';APP.selectedEmployment=u.employment||'';APP.selectedCity=u.city||'';APP.selectedTechSkills=[...(u.techSkills||[])];APP.selectedSportSkills=[...(u.sportSkills||[])];APP.selectedSartaife=u.sartaife||'';APP.selectedTayefe=u.tayefe||'';APP.selectedIsAdai=u.isAdai||'';APP.achievements=u.achievements||'';APP.selectedHeadNID=u.familyHeadNID||'';APP.selectedHeadName=u.familyHeadName||''}
+  if(!isEdit){APP.selectedGender='';APP.selectedFamilyHead='';APP.selectedEducation='';APP.selectedEmployment='';APP.selectedCity='';APP.selectedTechSkills=[];APP.selectedSportSkills=[];APP.selectedSartaife='';APP.selectedTayefe='';APP.selectedIsAdai='';APP.selectedRelation='';APP.achievements='';APP.selectedHeadNID='';APP.selectedHeadName=''}
+  else{APP.selectedGender=u.gender||'';APP.selectedFamilyHead=u.isFamilyHead?'بله':'خیر';APP.selectedEducation=u.education||'';APP.selectedEmployment=u.employment||'';APP.selectedCity=u.city||'';APP.selectedTechSkills=[...(u.techSkills||[])];APP.selectedSportSkills=[...(u.sportSkills||[])];APP.selectedSartaife=u.sartaife||'';APP.selectedTayefe=u.tayefe||'';APP.selectedIsAdai=u.isAdai||'';APP.selectedRelation=u.relationToHead||'';APP.achievements=u.achievements||'';APP.selectedHeadNID=u.familyHeadNID||'';APP.selectedHeadName=u.familyHeadName||''}
 
   const eduList=getEducations(),empList=getEmployments(),cityList=getCities(),techList=getTechSkills(),sportList=getSportSkills(),sartaifeList=getSartaife(),tayefeMap=getTayefeMap();
-  // نکته اصلاحی: تا زمانی که کاربر مشخص نکرده از عشیره آدای هست یا خیر، فهرست سرطایفه نمایش داده نمی‌شود
   const isAdaiAns=APP.selectedIsAdai;
-  const filteredST=isAdaiAns==='بله'?sartaifeList:(isAdaiAns==='خیر'?['سایر']:[]);
+  // برای آدای: انتخاب از فهرست سرطایفه‌های تعریف‌شده. برای غیرآدای: نام عشیره/طایفه به‌صورت آزاد وارد می‌شود
+  const filteredST=isAdaiAns==='بله'?sartaifeList:[];
   const selST=APP.selectedSartaife||'';
-  const tayefes=(selST&&selST!=='سایر')?(tayefeMap[selST]||[]):[];
-  const showTY=tayefes.length>0&&selST!=='سایر';
-  const showOtherTayefe=selST==='سایر';
+  const tayefes=(isAdaiAns==='بله'&&selST)?(tayefeMap[selST]||[]):[];
+  const showTY=tayefes.length>0;
+  const showOtherClan=isAdaiAns==='خیر';
+  // کارت طایفه فقط برای سرپرست خانوار، یا برای اعضایی با نسبت همسر/مادر/مادربزرگ نمایش داده می‌شود
+  const isHeadNow=isEdit?!!u.isFamilyHead:(APP.selectedFamilyHead==='بله');
+  const showTribeCard=isHeadNow||INDEPENDENT_TRIBE_RELATIONS.includes(APP.selectedRelation);
 
   let h=`<form onsubmit="return false" class="space-y-6">`;
   // اطلاعات فردی
@@ -524,11 +534,16 @@ function buildForm(mode){
     <div><label class="block text-sm font-medium mb-1.5 text-muted">نام پدربزرگ</label><input id="${p}GFN" class="input-field" value="${u.grandFatherName||''}"></div>
     <div><label class="block text-sm font-medium mb-1.5 text-muted">سال تولد</label><input id="${p}BY" type="number" min="1300" max="1410" class="input-field" value="${u.birthYear||''}"></div>
     <div><label class="block text-sm font-medium mb-1.5 text-muted">جنسیت</label><div class="flex gap-3">${['مرد','زن'].map(g=>`<div class="radio-card flex-1 justify-center ${APP.selectedGender===g?'selected':''}" onclick="pR(this,'gender','${g}')"><div class="dot"></div><span class="text-sm">${g}</span></div>`).join('')}</div></div>`;
-  if(!isEdit) h+=`<div><label class="block text-sm font-medium mb-1.5 text-muted">سرپرست خانوار؟</label><div class="flex gap-3" id="${p}FH">${['بله','خیر'].map(g=>`<div class="radio-card flex-1 justify-center" onclick="pR(this,'FH','${g}');document.getElementById('${p}linkFH').style.display='${g==='خیر'?'block':'none'}'"><div class="dot"></div><span class="text-sm">${g}</span></div>`).join('')}</div></div>`;
+  if(!isEdit) h+=`<div><label class="block text-sm font-medium mb-1.5 text-muted">سرپرست خانوار؟</label><div class="flex gap-3" id="${p}FH">${['بله','خیر'].map(g=>`<div class="radio-card flex-1 justify-center" onclick="pR(this,'FH','${g}');document.getElementById('${p}linkFH').style.display='${g==='خیر'?'block':'none'}';updateTribeVisibility('${p}')"><div class="dot"></div><span class="text-sm">${g}</span></div>`).join('')}</div></div>`;
   h+=`</div></div>`;
 
-  // اتصال سرپرست (فقط ثبت‌نام)
-  if(!isEdit) h+=`<div id="${p}linkFH" class="card" style="display:none"><h3 class="text-gold font-bold mb-4"><i class="fas fa-people-roof ml-2"></i>اتصال به سرپرست</h3><div class="space-y-3"><div class="flex gap-2"><input id="${p}sFH" class="input-field flex-1" placeholder="جستجوی نام سرپرست..."><button type="button" class="btn-gold btn-sm" onclick="sFH('${p}')">جستجو</button></div><div id="${p}fhR" class="space-y-2"></div><div class="text-center text-muted text-xs my-2">یا</div><div><label class="block text-sm text-muted mb-1">کد ملی سرپرست</label><input id="${p}fhNID" class="input-field" maxlength="10" inputmode="numeric"></div></div><div id="${p}selFH" class="mt-3 p-3 rounded-lg bg-teal/10 border border-teal/30 text-teal text-sm" style="display:none"></div></div>`;
+  // اتصال سرپرست + نسبت (فقط ثبت‌نام)
+  if(!isEdit) h+=`<div id="${p}linkFH" class="card" style="display:none"><h3 class="text-gold font-bold mb-4"><i class="fas fa-people-roof ml-2"></i>اتصال به سرپرست</h3><div class="space-y-3"><div class="flex gap-2"><input id="${p}sFH" class="input-field flex-1" placeholder="جستجوی نام سرپرست..."><button type="button" class="btn-gold btn-sm" onclick="sFH('${p}')">جستجو</button></div><div id="${p}fhR" class="space-y-2"></div><div class="text-center text-muted text-xs my-2">یا</div><div><label class="block text-sm text-muted mb-1">کد ملی سرپرست</label><input id="${p}fhNID" class="input-field" maxlength="10" inputmode="numeric"></div>
+    <div><label class="block text-sm text-muted mb-1">نسبت شما با سرپرست خانوار</label><select id="${p}REL" class="input-field" onchange="APP.selectedRelation=this.value;updateTribeVisibility('${p}')"><option value="">انتخاب کنید</option>${RELATION_OPTIONS.map(r=>`<option value="${r}" ${APP.selectedRelation===r?'selected':''}>${r}</option>`).join('')}</select></div>
+    </div><div id="${p}selFH" class="mt-3 p-3 rounded-lg bg-teal/10 border border-teal/30 text-teal text-sm" style="display:none"></div></div>`;
+
+  // نسبت با سرپرست (ویرایش پروفایل توسط عضوی که سرپرست نیست)
+  if(isEdit&&!u.isFamilyHead) h+=`<div class="card"><h3 class="text-gold font-bold mb-4"><i class="fas fa-people-roof ml-2"></i>نسبت با سرپرست خانوار</h3><select id="${p}REL" class="input-field" onchange="APP.selectedRelation=this.value;updateTribeVisibility('${p}')"><option value="">انتخاب کنید</option>${RELATION_OPTIONS.map(r=>`<option value="${r}" ${APP.selectedRelation===r?'selected':''}>${r}</option>`).join('')}</select></div>`;
 
   // تحصیلات و شغل
   h+=`<div class="card"><h3 class="text-gold font-bold mb-4"><i class="fas fa-graduation-cap ml-2"></i>تحصیلات و شغل</h3><div class="space-y-4">
@@ -550,12 +565,12 @@ function buildForm(mode){
     <div><label class="block text-sm font-medium mb-1.5 text-muted">افتخارات ثبت شده</label><textarea id="${p}ACH" class="input-field" rows="3">${APP.achievements||u.achievements||''}</textarea></div>
   </div></div>`;
 
-  // آدای و سرطایفه
-  h+=`<div class="card"><h3 class="text-gold font-bold mb-4"><i class="fas fa-sitemap ml-2"></i>طایفه و سرطایفه</h3><div class="space-y-4">
+  // آدای و سرطایفه — فقط برای سرپرست خانوار یا اعضای با نسبت همسر/مادر/مادربزرگ
+  h+=`<div class="card" id="${p}tribeCard" style="display:${showTribeCard?'block':'none'}"><h3 class="text-gold font-bold mb-4"><i class="fas fa-sitemap ml-2"></i>طایفه و سرطایفه</h3><div class="space-y-4">
     <div><label class="block text-sm font-medium mb-2 text-muted">آیا از عشیره آدای هستید؟</label><div class="flex gap-3">${['بله','خیر'].map(g=>`<div class="radio-card flex-1 justify-center ${APP.selectedIsAdai===g?'selected':''}" onclick="pR(this,'isAdai','${g}');refST('${p}','${g}')"><div class="dot"></div><span class="text-sm">${g}</span></div>`).join('')}</div></div>
-    <div id="${p}stWrap" style="display:${isAdaiAns?'block':'none'}"><label class="block text-sm font-medium mb-2 text-muted">سرطایفه</label><div id="${p}stSel" class="flex flex-wrap gap-2">${filteredST.length?filteredST.map(s=>`<div class="chip ${selST===s?'selected':''}" onclick="pST('${p}','${s}')">${s}</div>`).join(''):'<span class="text-muted text-sm">ابتدا توسط ادمین تنظیم شود</span>'}</div></div>
+    <div id="${p}stWrap" style="display:${isAdaiAns==='بله'?'block':'none'}"><label class="block text-sm font-medium mb-2 text-muted">سرطایفه</label><div id="${p}stSel" class="flex flex-wrap gap-2">${filteredST.length?filteredST.map(s=>`<div class="chip ${selST===s?'selected':''}" onclick="pST('${p}','${s}')">${s}</div>`).join(''):'<span class="text-muted text-sm">ابتدا توسط ادمین تنظیم شود</span>'}</div></div>
     <div id="${p}tyC" style="display:${showTY?'block':'none'}"><label class="block text-sm font-medium mb-2 text-muted">طایفه</label><div id="${p}tySel" class="flex flex-wrap gap-2">${tayefes.map(t=>`<div class="chip ${APP.selectedTayefe===t?'selected':''}" onclick="pC(this,'tayefe','${t}')">${t}</div>`).join('')}</div></div>
-    <div id="${p}tyOther" style="display:${showOtherTayefe?'block':'none'}"><label class="block text-sm font-medium mb-1.5 text-muted">نام طایفه/عشیره خود را وارد کنید</label><input id="${p}TYO" class="input-field" value="${showOtherTayefe?(u.tayefe||''):''}" oninput="APP.selectedTayefe=this.value"></div>
+    <div id="${p}clanOther" style="display:${showOtherClan?'block':'none'}"><label class="block text-sm font-medium mb-1.5 text-muted">نام عشیره/طایفه خود را وارد کنید</label><input id="${p}CLO" class="input-field" value="${showOtherClan?selST:''}" oninput="APP.selectedSartaife=this.value"></div>
   </div></div>`;
 
   h+=`<button type="button" class="btn-gold w-full text-base py-3" onclick="${isEdit?'saveEdit()':'submitReg()'}"><i class="fas fa-save ml-2"></i>${isEdit?'ذخیره تغییرات':'ثبت نهایی'}</button>`;
@@ -567,8 +582,8 @@ function buildForm(mode){
 function pR(el,g,v){el.parentElement.querySelectorAll('.radio-card').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');if(g==='gender')APP.selectedGender=v;if(g==='FH')APP.selectedFamilyHead=v;if(g==='isAdai')APP.selectedIsAdai=v}
 function pC(el,g,v){el.parentElement.querySelectorAll('.chip').forEach(c=>c.classList.remove('selected'));el.classList.add('selected');if(g==='education')APP.selectedEducation=v;if(g==='employment')APP.selectedEmployment=v;if(g==='city')APP.selectedCity=v;if(g==='tayefe')APP.selectedTayefe=v}
 function tM(el,g,v){el.classList.toggle('selected');const a=g==='tech'?APP.selectedTechSkills:APP.selectedSportSkills;const i=a.indexOf(v);if(i>-1)a.splice(i,1);else a.push(v)}
-function pST(p,v){APP.selectedSartaife=v;APP.selectedTayefe='';const map=getTayefeMap();const t=(v&&v!=='سایر')?(map[v]||[]):[];document.getElementById(p+'stSel').querySelectorAll('.chip').forEach(c=>c.classList.toggle('selected',c.textContent===v));const tc=document.getElementById(p+'tyC');const to=document.getElementById(p+'tyOther');if(t.length&&v!=='سایر'){tc.style.display='block';to.style.display='none';document.getElementById(p+'tySel').innerHTML=t.map(x=>`<div class="chip" onclick="pC(this,'tayefe','${x}')">${x}</div>`).join('')}else{tc.style.display='none';to.style.display=v==='سایر'?'block':'none'}}
-function refST(p,isAdai){APP.selectedSartaife='';APP.selectedTayefe='';const list=getSartaife();const f=isAdai==='خیر'?['سایر']:list;document.getElementById(p+'stWrap').style.display='block';document.getElementById(p+'stSel').innerHTML=f.length?f.map(s=>`<div class="chip" onclick="pST('${p}','${s}')">${s}</div>`).join(''):'<span class="text-muted text-sm">ابتدا توسط ادمین تنظیم شود</span>';document.getElementById(p+'tyC').style.display='none';document.getElementById(p+'tyOther').style.display=isAdai==='خیر'?'block':'none';if(isAdai==='خیر')pST(p,'سایر')}
+function pST(p,v){APP.selectedSartaife=v;APP.selectedTayefe='';const map=getTayefeMap();const t=map[v]||[];document.getElementById(p+'stSel').querySelectorAll('.chip').forEach(c=>c.classList.toggle('selected',c.textContent===v));const tc=document.getElementById(p+'tyC');if(t.length){tc.style.display='block';document.getElementById(p+'tySel').innerHTML=t.map(x=>`<div class="chip" onclick="pC(this,'tayefe','${x}')">${x}</div>`).join('')}else{tc.style.display='none'}}
+function refST(p,isAdai){APP.selectedSartaife='';APP.selectedTayefe='';const list=getSartaife();document.getElementById(p+'stWrap').style.display=isAdai==='بله'?'block':'none';document.getElementById(p+'stSel').innerHTML=list.length?list.map(s=>`<div class="chip" onclick="pST('${p}','${s}')">${s}</div>`).join(''):'<span class="text-muted text-sm">ابتدا توسط ادمین تنظیم شود</span>';document.getElementById(p+'tyC').style.display='none';document.getElementById(p+'clanOther').style.display=isAdai==='خیر'?'block':'none';updateTribeVisibility(p)}
 
 async function sFH(p){
   const q=document.getElementById(p+'sFH').value.trim();if(!q){showToast('عبارتی وارد کنید','error');return}
@@ -586,15 +601,19 @@ async function submitReg(){
   if(!d.fn||!d.ln||!d.fa){showToast('نام، نام خانوادگی و نام پدر الزامی','error');return}
   if(!d.by||d.by<1300||d.by>1410){showToast('سال تولد معتبر نیست','error');return}
   if(!APP.selectedGender||!APP.selectedFamilyHead||!APP.selectedEducation||!APP.selectedEmployment||!APP.selectedCity){showToast('همه فیلدهای انتخابی را پر کنید','error');return}
-  if(!APP.selectedIsAdai){showToast('مشخص کنید آیا از عشیره آدای هستید','error');return}
-  if(!APP.selectedSartaife){showToast('سرطایفه را انتخاب کنید','error');return}
+  const needsOwnTribe=APP.selectedFamilyHead==='بله'||INDEPENDENT_TRIBE_RELATIONS.includes(APP.selectedRelation);
+  if(needsOwnTribe){
+    if(!APP.selectedIsAdai){showToast('مشخص کنید آیا از عشیره آدای هستید','error');return}
+    if(!APP.selectedSartaife){showToast('سرطایفه/نام عشیره را وارد کنید','error');return}
+  }
   let fhNID='',fhName='';
   if(APP.selectedFamilyHead==='خیر'){
     const nid=gF('rfhNID');fhNID=APP.selectedHeadNID||nid;
     if(!fhNID){showToast('سرپرست را مشخص کنید','error');return}
+    if(!APP.selectedRelation){showToast('نسبت خود با سرپرست را انتخاب کنید','error');return}
     try{const h=await apiSafe('getFamilyHeadByNID',{nationalId:fhNID},'در حال بررسی سرپرست...');if(!h){showToast('سرپرست یافت نشد','error');return}fhName=h.name}catch(e){return}
   }
-  const user={nationalId:APP.tempNID,phone:APP.tempPhone,gender:APP.selectedGender,isFamilyHead:APP.selectedFamilyHead==='بله',familyHeadNID:APP.selectedFamilyHead==='خیر'?fhNID:null,familyHeadName:APP.selectedFamilyHead==='خیر'?fhName:null,firstName:d.fn,lastName:d.ln,fatherName:d.fa,grandFatherName:d.gf,birthYear:d.by,education:APP.selectedEducation,employment:APP.selectedEmployment,jobTitle:d.jt,city:APP.selectedCity,cityDesc:d.cd,techSkills:[...APP.selectedTechSkills],sportSkills:[...APP.selectedSportSkills],achievements:d.ach,isAdai:APP.selectedIsAdai,sartaife:APP.selectedSartaife,tayefe:APP.selectedTayefe,addedByHead:false};
+  const user={nationalId:APP.tempNID,phone:APP.tempPhone,gender:APP.selectedGender,isFamilyHead:APP.selectedFamilyHead==='بله',familyHeadNID:APP.selectedFamilyHead==='خیر'?fhNID:null,familyHeadName:APP.selectedFamilyHead==='خیر'?fhName:null,relationToHead:APP.selectedFamilyHead==='خیر'?APP.selectedRelation:'سرپرست',firstName:d.fn,lastName:d.ln,fatherName:d.fa,grandFatherName:d.gf,birthYear:d.by,education:APP.selectedEducation,employment:APP.selectedEmployment,jobTitle:d.jt,city:APP.selectedCity,cityDesc:d.cd,techSkills:[...APP.selectedTechSkills],sportSkills:[...APP.selectedSportSkills],achievements:d.ach,isAdai:needsOwnTribe?APP.selectedIsAdai:'',sartaife:needsOwnTribe?APP.selectedSartaife:'',tayefe:needsOwnTribe?APP.selectedTayefe:'',addedByHead:false};
   try{
     const saved=await apiSafe('registerUser',{user:user},'در حال ثبت اطلاعات...');
     APP.currentUser=saved;showToast('ثبت شد','success');navigateTo('user-dashboard');
@@ -604,8 +623,10 @@ async function saveEdit(){
   const gF=v=>document.getElementById(v).value.trim();const u=APP.currentUser;if(!u)return;
   const d={fn:gF('eFN'),ln:gF('eLN'),fa:gF('eFaN'),gf:gF('eGFN'),by:parseInt(gF('eBY'))||0,jt:gF('eJT'),cd:gF('eCD'),ach:gF('eACH')};
   if(!d.fn||!d.ln||!d.fa){showToast('نام، نام خانوادگی و نام پدر الزامی','error');return}
-  if(!APP.selectedIsAdai||!APP.selectedSartaife){showToast('طایفه و سرطایفه الزامی','error');return}
-  const fields={firstName:d.fn,lastName:d.ln,fatherName:d.fa,grandFatherName:d.gf,birthYear:d.by||u.birthYear,gender:APP.selectedGender,education:APP.selectedEducation,employment:APP.selectedEmployment,jobTitle:d.jt,city:APP.selectedCity,cityDesc:d.cd,techSkills:[...APP.selectedTechSkills],sportSkills:[...APP.selectedSportSkills],achievements:d.ach,isAdai:APP.selectedIsAdai,sartaife:APP.selectedSartaife,tayefe:APP.selectedTayefe};
+  const needsOwnTribe=u.isFamilyHead||INDEPENDENT_TRIBE_RELATIONS.includes(APP.selectedRelation);
+  if(!u.isFamilyHead&&!APP.selectedRelation){showToast('نسبت خود با سرپرست را انتخاب کنید','error');return}
+  if(needsOwnTribe&&(!APP.selectedIsAdai||!APP.selectedSartaife)){showToast('طایفه و سرطایفه/نام عشیره الزامی است','error');return}
+  const fields={firstName:d.fn,lastName:d.ln,fatherName:d.fa,grandFatherName:d.gf,birthYear:d.by||u.birthYear,gender:APP.selectedGender,education:APP.selectedEducation,employment:APP.selectedEmployment,jobTitle:d.jt,city:APP.selectedCity,cityDesc:d.cd,techSkills:[...APP.selectedTechSkills],sportSkills:[...APP.selectedSportSkills],achievements:d.ach,relationToHead:u.isFamilyHead?'سرپرست':APP.selectedRelation,isAdai:needsOwnTribe?APP.selectedIsAdai:'',sartaife:needsOwnTribe?APP.selectedSartaife:'',tayefe:needsOwnTribe?APP.selectedTayefe:''};
   try{
     const updated=await apiSafe('updateSelf',{id:u.id,nationalId:u.nationalId,phone:u.phone,fields:fields},'در حال ذخیره...');
     APP.currentUser=updated;showToast('ذخیره شد','success');navigateTo('user-dashboard');
@@ -667,6 +688,7 @@ async function renderFamilyManage(){
 
 function addFamilyMember(){
   const techList=getTechSkills(),sportList=getSportSkills();
+  APP.selectedFamilyHead='';APP.selectedRelation='';APP.selectedIsAdai='';APP.selectedSartaife='';APP.selectedTayefe='';
   showModal(`<h3 class="text-lg font-bold text-gold mb-4"><i class="fas fa-user-plus ml-2"></i>افزودن عضو</h3>
     <div class="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
       <div class="grid grid-cols-2 gap-3">
@@ -682,6 +704,14 @@ function addFamilyMember(){
         <div><label class="block text-xs text-muted mb-1">شغل</label><input id="fmJT" class="input-field"></div>
       </div>
       <div><label class="block text-xs text-muted mb-1">شهرستان</label><select id="fmCT" class="input-field">${getCities().map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div><label class="block text-xs text-muted mb-1">نسبت با سرپرست خانوار</label><select id="fmREL" class="input-field" onchange="APP.selectedRelation=this.value;updateTribeVisibility('fm')"><option value="">انتخاب کنید</option>${RELATION_OPTIONS.map(r=>`<option value="${r}">${r}</option>`).join('')}</select></div>
+      <div id="fmtribeCard" style="display:none" class="p-3 rounded-lg border border-gold/30 bg-gold/5 space-y-3">
+        <p class="text-gold text-xs font-bold"><i class="fas fa-sitemap ml-1"></i>چون این نسبت ممکن است هم‌عشیره‌ی سرپرست نباشد، طایفه‌ی خودش را مشخص کنید</p>
+        <div><label class="block text-xs text-muted mb-2">آیا از عشیره آدای است؟</label><div class="flex gap-3">${['بله','خیر'].map(g=>`<div class="radio-card flex-1 justify-center" onclick="pR(this,'isAdai','${g}');refST('fm','${g}')"><div class="dot"></div><span class="text-sm">${g}</span></div>`).join('')}</div></div>
+        <div id="fmstWrap" style="display:none"><label class="block text-xs text-muted mb-2">سرطایفه</label><div id="fmstSel" class="flex flex-wrap gap-1"></div></div>
+        <div id="fmtyC" style="display:none"><label class="block text-xs text-muted mb-2">طایفه</label><div id="fmtySel" class="flex flex-wrap gap-1"></div></div>
+        <div id="fmclanOther" style="display:none"><label class="block text-xs text-muted mb-1">نام عشیره/طایفه را وارد کنید</label><input id="fmCLO" class="input-field" oninput="APP.selectedSartaife=this.value"></div>
+      </div>
       <div><label class="block text-xs text-muted mb-2">مهارت فنی</label><div id="fmTC" class="flex flex-wrap gap-1">${techList.map(s=>`<div class="chip text-xs" onclick="this.classList.toggle('selected')">${s}</div>`).join('')}</div></div>
       <div><label class="block text-xs text-muted mb-2">مهارت ورزشی</label><div id="fmSP" class="flex flex-wrap gap-1">${sportList.map(s=>`<div class="chip text-xs" onclick="this.classList.toggle('selected')">${s}</div>`).join('')}</div></div>
       <div><label class="block text-xs text-muted mb-1">افتخارات</label><textarea id="fmACH" class="input-field" rows="2"></textarea></div>
@@ -691,10 +721,14 @@ function addFamilyMember(){
 
 async function saveFM(){
   const nid=document.getElementById('fmNID').value.trim(),fn=document.getElementById('fmFN').value.trim(),ln=document.getElementById('fmLN').value.trim(),fa=document.getElementById('fmFa').value.trim();
+  const relation=document.getElementById('fmREL').value;
   if(!nid||!fn||!ln||!fa){showToast('فیلدهای الزامی','error');return}
+  if(!relation){showToast('نسبت با سرپرست را انتخاب کنید','error');return}
+  const needsOwnTribe=INDEPENDENT_TRIBE_RELATIONS.includes(relation);
+  if(needsOwnTribe&&(!APP.selectedIsAdai||!APP.selectedSartaife)){showToast('برای این نسبت، اطلاعات طایفه الزامی است','error');return}
   const tc=[],sp=[];document.getElementById('fmTC').querySelectorAll('.chip.selected').forEach(c=>tc.push(c.textContent));
   document.getElementById('fmSP').querySelectorAll('.chip.selected').forEach(c=>sp.push(c.textContent));
-  const member={nationalId:nid,gender:document.getElementById('fmGN').value,firstName:fn,lastName:ln,fatherName:fa,grandFatherName:document.getElementById('fmGF').value.trim(),birthYear:parseInt(document.getElementById('fmYR').value)||0,education:document.getElementById('fmED').value,employment:document.getElementById('fmEM').value,jobTitle:document.getElementById('fmJT').value.trim(),city:document.getElementById('fmCT').value,techSkills:tc,sportSkills:sp,achievements:document.getElementById('fmACH').value.trim()};
+  const member={nationalId:nid,gender:document.getElementById('fmGN').value,firstName:fn,lastName:ln,fatherName:fa,grandFatherName:document.getElementById('fmGF').value.trim(),birthYear:parseInt(document.getElementById('fmYR').value)||0,education:document.getElementById('fmED').value,employment:document.getElementById('fmEM').value,jobTitle:document.getElementById('fmJT').value.trim(),city:document.getElementById('fmCT').value,relationToHead:relation,isAdai:needsOwnTribe?APP.selectedIsAdai:'',sartaife:needsOwnTribe?APP.selectedSartaife:'',tayefe:needsOwnTribe?APP.selectedTayefe:'',techSkills:tc,sportSkills:sp,achievements:document.getElementById('fmACH').value.trim()};
   try{
     await apiSafe('addFamilyMember',{headNID:APP.currentUser.nationalId,headPhone:APP.currentUser.phone,member:member},'در حال ثبت...');
     closeModal();showToast('اضافه شد','success');renderFamilyManage();
@@ -704,6 +738,11 @@ async function saveFM(){
 function editFM(id){
   const m=(APP._familyCache||[]).find(x=>x.id===id);if(!m)return;
   const tl=getTechSkills(),sl=getSportSkills();
+  APP.selectedRelation=m.relationToHead||'';APP.selectedIsAdai=m.isAdai||'';APP.selectedSartaife=m.sartaife||'';APP.selectedTayefe=m.tayefe||'';
+  const sartaifeList=getSartaife(),tayefeMap=getTayefeMap();
+  const needsOwnTribe=INDEPENDENT_TRIBE_RELATIONS.includes(APP.selectedRelation);
+  const filteredST=APP.selectedIsAdai==='بله'?sartaifeList:[];
+  const tayefes=(APP.selectedIsAdai==='بله'&&APP.selectedSartaife)?(tayefeMap[APP.selectedSartaife]||[]):[];
   showModal(`<h3 class="text-lg font-bold text-gold mb-4"><i class="fas fa-edit ml-2"></i>ویرایش ${m.firstName} ${m.lastName}</h3>
     <div class="space-y-3 max-h-[70vh] overflow-y-auto pr-1">
       <div class="grid grid-cols-2 gap-3">
@@ -718,6 +757,14 @@ function editFM(id){
         <div class="col-span-2"><label class="block text-xs text-muted mb-1">شغل</label><input id="efJT" class="input-field" value="${m.jobTitle||''}"></div>
         <div class="col-span-2"><label class="block text-xs text-muted mb-1">شهرستان</label><select id="efCT" class="input-field">${getCities().map(c=>`<option ${m.city===c?'selected':''}>${c}</option>`).join('')}</select></div>
       </div>
+      <div><label class="block text-xs text-muted mb-1">نسبت با سرپرست خانوار</label><select id="efREL" class="input-field" onchange="APP.selectedRelation=this.value;updateTribeVisibility('ef')"><option value="">انتخاب کنید</option>${RELATION_OPTIONS.map(r=>`<option value="${r}" ${APP.selectedRelation===r?'selected':''}>${r}</option>`).join('')}</select></div>
+      <div id="eftribeCard" style="display:${needsOwnTribe?'block':'none'}" class="p-3 rounded-lg border border-gold/30 bg-gold/5 space-y-3">
+        <p class="text-gold text-xs font-bold"><i class="fas fa-sitemap ml-1"></i>چون این نسبت ممکن است هم‌عشیره‌ی سرپرست نباشد، طایفه‌ی خودش را مشخص کنید</p>
+        <div><label class="block text-xs text-muted mb-2">آیا از عشیره آدای است؟</label><div class="flex gap-3">${['بله','خیر'].map(g=>`<div class="radio-card flex-1 justify-center ${APP.selectedIsAdai===g?'selected':''}" onclick="pR(this,'isAdai','${g}');refST('ef','${g}')"><div class="dot"></div><span class="text-sm">${g}</span></div>`).join('')}</div></div>
+        <div id="efstWrap" style="display:${APP.selectedIsAdai==='بله'?'block':'none'}"><label class="block text-xs text-muted mb-2">سرطایفه</label><div id="efstSel" class="flex flex-wrap gap-1">${filteredST.map(s=>`<div class="chip text-xs ${APP.selectedSartaife===s?'selected':''}" onclick="pST('ef','${s}')">${s}</div>`).join('')}</div></div>
+        <div id="eftyC" style="display:${tayefes.length?'block':'none'}"><label class="block text-xs text-muted mb-2">طایفه</label><div id="eftySel" class="flex flex-wrap gap-1">${tayefes.map(t=>`<div class="chip text-xs ${APP.selectedTayefe===t?'selected':''}" onclick="pC(this,'tayefe','${t}')">${t}</div>`).join('')}</div></div>
+        <div id="efclanOther" style="display:${APP.selectedIsAdai==='خیر'?'block':'none'}"><label class="block text-xs text-muted mb-1">نام عشیره/طایفه را وارد کنید</label><input id="efCLO" class="input-field" value="${APP.selectedIsAdai==='خیر'?APP.selectedSartaife:''}" oninput="APP.selectedSartaife=this.value"></div>
+      </div>
       <div><label class="block text-xs text-muted mb-2">مهارت فنی</label><div id="efTC" class="flex flex-wrap gap-1">${tl.map(s=>`<div class="chip text-xs ${(m.techSkills||[]).includes(s)?'selected':''}" onclick="this.classList.toggle('selected')">${s}</div>`).join('')}</div></div>
       <div><label class="block text-xs text-muted mb-2">مهارت ورزشی</label><div id="efSP" class="flex flex-wrap gap-1">${sl.map(s=>`<div class="chip text-xs ${(m.sportSkills||[]).includes(s)?'selected':''}" onclick="this.classList.toggle('selected')">${s}</div>`).join('')}</div></div>
       <div><label class="block text-xs text-muted mb-1">افتخارات</label><textarea id="efACH" class="input-field" rows="2">${m.achievements||''}</textarea></div>
@@ -725,9 +772,13 @@ function editFM(id){
     </div>`);
 }
 async function saveEFM(id){
+  const relation=document.getElementById('efREL').value;
+  if(!relation){showToast('نسبت با سرپرست را انتخاب کنید','error');return}
+  const needsOwnTribe=INDEPENDENT_TRIBE_RELATIONS.includes(relation);
+  if(needsOwnTribe&&(!APP.selectedIsAdai||!APP.selectedSartaife)){showToast('برای این نسبت، اطلاعات طایفه الزامی است','error');return}
   const tc=[],sp=[];document.getElementById('efTC').querySelectorAll('.chip.selected').forEach(c=>tc.push(c.textContent));
   document.getElementById('efSP').querySelectorAll('.chip.selected').forEach(c=>sp.push(c.textContent));
-  const fields={firstName:document.getElementById('efFN').value.trim(),lastName:document.getElementById('efLN').value.trim(),fatherName:document.getElementById('efFa').value.trim(),grandFatherName:document.getElementById('efGF').value.trim(),birthYear:parseInt(document.getElementById('efYR').value)||0,gender:document.getElementById('efGN').value,education:document.getElementById('efED').value,employment:document.getElementById('efEM').value,jobTitle:document.getElementById('efJT').value.trim(),city:document.getElementById('efCT').value,techSkills:tc,sportSkills:sp,achievements:document.getElementById('efACH').value.trim()};
+  const fields={firstName:document.getElementById('efFN').value.trim(),lastName:document.getElementById('efLN').value.trim(),fatherName:document.getElementById('efFa').value.trim(),grandFatherName:document.getElementById('efGF').value.trim(),birthYear:parseInt(document.getElementById('efYR').value)||0,gender:document.getElementById('efGN').value,education:document.getElementById('efED').value,employment:document.getElementById('efEM').value,jobTitle:document.getElementById('efJT').value.trim(),city:document.getElementById('efCT').value,relationToHead:relation,isAdai:needsOwnTribe?APP.selectedIsAdai:'',sartaife:needsOwnTribe?APP.selectedSartaife:'',tayefe:needsOwnTribe?APP.selectedTayefe:'',techSkills:tc,sportSkills:sp,achievements:document.getElementById('efACH').value.trim()};
   try{
     await apiSafe('updateFamilyMember',{headNID:APP.currentUser.nationalId,headPhone:APP.currentUser.phone,id:id,fields:fields},'در حال ذخیره...');
     closeModal();showToast('ذخیره شد','success');renderFamilyManage();
@@ -751,11 +802,12 @@ async function adminLogin(){
 }
 
 async function renderAdminPanel(){
-  const tabs=[{id:'users',l:'کاربران',i:'fa-users'},{id:'charts',l:'نمودارها',i:'fa-chart-bar'},{id:'admins',l:'ادمین‌ها',i:'fa-user-shield'},{id:'lists',l:'داده‌های پایه',i:'fa-database'},{id:'questions',l:'سؤالات تأیید',i:'fa-circle-question'}];
+  const tabs=[{id:'users',l:'کاربران',i:'fa-users'},{id:'charts',l:'نمودارها',i:'fa-chart-bar'},{id:'tree',l:'شجره‌نامه',i:'fa-sitemap'},{id:'admins',l:'ادمین‌ها',i:'fa-user-shield'},{id:'lists',l:'داده‌های پایه',i:'fa-database'},{id:'questions',l:'سؤالات تأیید',i:'fa-circle-question'}];
   document.getElementById('adminTabs').innerHTML=tabs.map(t=>`<button class="tab-btn ${APP.adminTab===t.id?'active':''}" onclick="APP.adminTab='${t.id}';renderAdminPanel()"><i class="fas ${t.i} ml-1"></i>${t.l}</button>`).join('');
   const c=document.getElementById('adminContent');
   await ensureBootstrap();
   if(APP.adminTab==='users')await renderAdminUsers(c);else if(APP.adminTab==='charts')await renderAdminCharts(c);
+  else if(APP.adminTab==='tree')await renderAdminTree(c);
   else if(APP.adminTab==='admins')await renderAdminAdmins(c);else if(APP.adminTab==='lists')renderAdminLists(c);
   else if(APP.adminTab==='questions')await renderAdminQuestions(c);
 }
@@ -783,7 +835,6 @@ function filtAU(){
 
 function adminEU(id){
   const u=(APP.adminUsersCache||[]).find(x=>x.id===id);if(!u)return;
-  const sList=getSartaife();
   showModal(`<h3 class="text-lg font-bold text-gold mb-4"><i class="fas fa-edit ml-2"></i>ویرایش ${u.firstName} ${u.lastName}</h3>
     <div class="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
       <div class="grid grid-cols-2 gap-3">
@@ -798,8 +849,9 @@ function adminEU(id){
         <div><label class="block text-xs text-muted mb-1">اشتغال</label><select id="auEM" class="input-field">${getEmployments().map(e=>`<option ${u.employment===e?'selected':''}>${e}</option>`).join('')}</select></div>
         <div><label class="block text-xs text-muted mb-1">شغل</label><input id="auJT" class="input-field" value="${u.jobTitle||''}"></div>
         <div><label class="block text-xs text-muted mb-1">شهرستان</label><select id="auCT" class="input-field">${getCities().map(c=>`<option ${u.city===c?'selected':''}>${c}</option>`).join('')}</select></div>
-        <div><label class="block text-xs text-muted mb-1">آدای</label><select id="auAD" class="input-field"><option ${u.isAdai==='بله'?'selected':''}>بله</option><option ${u.isAdai==='خیر'?'selected':''}>خیر</option></select></div>
-        <div><label class="block text-xs text-muted mb-1">سرطایفه</label><select id="auST" class="input-field">${sList.map(s=>`<option ${u.sartaife===s?'selected':''}>${s}</option>`).join('')}</select></div>
+        <div><label class="block text-xs text-muted mb-1">نسبت با سرپرست</label><select id="auREL" class="input-field"><option value="" ${!u.relationToHead?'selected':''}>—</option><option value="سرپرست" ${u.relationToHead==='سرپرست'?'selected':''}>سرپرست</option>${RELATION_OPTIONS.map(r=>`<option value="${r}" ${u.relationToHead===r?'selected':''}>${r}</option>`).join('')}</select></div>
+        <div><label class="block text-xs text-muted mb-1">آدای</label><select id="auAD" class="input-field"><option value="" ${!u.isAdai?'selected':''}>—</option><option ${u.isAdai==='بله'?'selected':''}>بله</option><option ${u.isAdai==='خیر'?'selected':''}>خیر</option></select></div>
+        <div><label class="block text-xs text-muted mb-1">سرطایفه/نام عشیره</label><input id="auST" class="input-field" value="${u.sartaife||''}"></div>
         <div><label class="block text-xs text-muted mb-1">طایفه</label><input id="auTY" class="input-field" value="${u.tayefe||''}"></div>
         <div><label class="block text-xs text-muted mb-1">موبایل</label><input id="auPH" class="input-field" value="${u.phone||''}" dir="ltr"></div>
       </div>
@@ -809,7 +861,7 @@ function adminEU(id){
     </div>`);
 }
 async function saveAU(id){
-  const fields={firstName:document.getElementById('auFN').value.trim(),lastName:document.getElementById('auLN').value.trim(),fatherName:document.getElementById('auFa').value.trim(),grandFatherName:document.getElementById('auGF').value.trim(),nationalId:document.getElementById('auNID').value.trim(),birthYear:parseInt(document.getElementById('auYR').value)||0,gender:document.getElementById('auGN').value,education:document.getElementById('auED').value,employment:document.getElementById('auEM').value,jobTitle:document.getElementById('auJT').value.trim(),city:document.getElementById('auCT').value,cityDesc:document.getElementById('auCD').value.trim(),isAdai:document.getElementById('auAD').value,sartaife:document.getElementById('auST').value,tayefe:document.getElementById('auTY').value.trim(),phone:document.getElementById('auPH').value.trim(),achievements:document.getElementById('auACH').value.trim()};
+  const fields={firstName:document.getElementById('auFN').value.trim(),lastName:document.getElementById('auLN').value.trim(),fatherName:document.getElementById('auFa').value.trim(),grandFatherName:document.getElementById('auGF').value.trim(),nationalId:document.getElementById('auNID').value.trim(),birthYear:parseInt(document.getElementById('auYR').value)||0,gender:document.getElementById('auGN').value,education:document.getElementById('auED').value,employment:document.getElementById('auEM').value,jobTitle:document.getElementById('auJT').value.trim(),city:document.getElementById('auCT').value,cityDesc:document.getElementById('auCD').value.trim(),relationToHead:document.getElementById('auREL').value,isAdai:document.getElementById('auAD').value,sartaife:document.getElementById('auST').value.trim(),tayefe:document.getElementById('auTY').value.trim(),phone:document.getElementById('auPH').value.trim(),achievements:document.getElementById('auACH').value.trim()};
   try{await apiSafe('adminUpdateUser',{id:id,fields:fields},'در حال ذخیره...');closeModal();showToast('ذخیره شد','success');renderAdminPanel()}catch(e){}
 }
 async function adminDU(id){
@@ -840,6 +892,41 @@ function renderAdminCharts(c){
     c.innerHTML=`<div id="aSR" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8"></div><div id="aCG" class="grid grid-cols-1 lg:grid-cols-2 gap-6"></div>`;
     renderStatsFromStats('aSR',stats);renderChartsFromStats('aCG',stats);
   }).catch(()=>{});
+}
+
+// ---- شجره‌نامه: عشیره ← سرطایفه/نام عشیره ← طایفه ← پدربزرگ ← پدر ← عضو ----
+async function renderAdminTree(c){
+  try{
+    const users=await apiSafe('adminGetUsers',{},'در حال بارگذاری...');
+    APP.adminUsersCache=users;
+    if(!users.length){c.innerHTML='<p class="text-muted text-center py-10">هنوز کاربری ثبت نشده</p>';return}
+    const tree={};
+    users.forEach(u=>{
+      const l1=u.isAdai==='بله'?'آدای':'سایر عشایر';
+      const l2=u.sartaife||'نامشخص';
+      const l3=u.tayefe||'—';
+      const l4=u.grandFatherName||'—';
+      const l5=u.fatherName||'نامشخص';
+      tree[l1]=tree[l1]||{};tree[l1][l2]=tree[l1][l2]||{};tree[l1][l2][l3]=tree[l1][l2][l3]||{};
+      tree[l1][l2][l3][l4]=tree[l1][l2][l3][l4]||{};tree[l1][l2][l3][l4][l5]=tree[l1][l2][l3][l4][l5]||[];
+      tree[l1][l2][l3][l4][l5].push(u);
+    });
+    function countLeaves(node){
+      if(Array.isArray(node))return node.length;
+      return Object.values(node).reduce((s,v)=>s+countLeaves(v),0);
+    }
+    function renderLevel(node,depth){
+      if(Array.isArray(node)){
+        return node.map(u=>`<div class="flex items-center justify-between py-1.5 px-3 rounded-lg hover:bg-bg/60 text-sm"><span>${u.firstName} ${u.lastName}<span class="text-muted text-xs mr-2">(${u.gender==='مرد'?'پسر':'دختر'} ${u.fatherName})</span></span><span class="badge ${u.isFamilyHead?'badge-gold':'badge-teal'}">${u.relationToHead||(u.isFamilyHead?'سرپرست':'—')}</span></div>`).join('');
+      }
+      const icons=['fa-mountain','fa-people-roof','fa-sitemap','fa-user-tie','fa-user'];
+      return Object.keys(node).sort().map(key=>{
+        const count=countLeaves(node[key]);
+        return `<details class="mr-3" ${depth<1?'open':''}><summary class="cursor-pointer py-1.5 text-sm font-bold flex items-center gap-2" style="color:${depth===0?'#d4a843':(depth===1?'#2ea58e':'#e6edf3')}"><i class="fas ${icons[depth]||'fa-user'}"></i>${key}<span class="badge badge-gold" style="font-size:10px">${count} نفر</span></summary><div class="pr-2 border-r-2 border-border mr-2">${renderLevel(node[key],depth+1)}</div></details>`;
+      }).join('');
+    }
+    c.innerHTML=`<div class="mb-4 p-3 rounded-xl bg-gold/5 border border-gold/20 text-muted text-xs leading-6"><i class="fas fa-info-circle ml-1"></i>ساختار: عشیره ← سرطایفه/نام عشیره ← طایفه ← نام پدربزرگ ← نام پدر ← عضو. برای باز/بسته کردن هر سطح روی آن کلیک کنید.</div><div class="card">${renderLevel(tree,0)}</div>`;
+  }catch(e){}
 }
 
 async function renderAdminAdmins(c){
