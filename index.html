@@ -280,7 +280,7 @@ td{padding:8px 12px;border-bottom:1px solid #21262d;white-space:nowrap}tr:hover 
 const CONFIG={
   API_URL:'https://script.google.com/macros/s/AKfycbytxap1sObJTXolTFDfPXgMzIGJXIvKRxSWG5vgfCfsnDHc-NEJ5dAO97YNaOmdZhXW/exec' // مثال: https://script.google.com/macros/s/AKfycb.../exec
 };
-const FRONTEND_BUILD_TAG='2026-07-14-relation-tree-2'; // برای اطمینان از این‌که نسخه‌ی جدید فایل واقعاً روی سایت بارگذاری شده
+const FRONTEND_BUILD_TAG='2026-07-14-fix-admintab-3'; // برای اطمینان از این‌که نسخه‌ی جدید فایل واقعاً روی سایت بارگذاری شده
 
 // ==================== وضعیت برنامه ====================
 let APP={currentView:'landing',tempPhone:'',tempNID:'',tempOTP:'',otpTimerInterval:null,otpPurpose:'register',
@@ -410,7 +410,7 @@ async function navigateTo(v){
     if(v==='edit-profile'){await ensureBootstrap();buildForm('edit')}
     if(v==='family-manage')await renderFamilyManage();
     if(v==='admin')await renderAdminPanel();
-  }catch(e){/* پیام خطا از طریق toast قبلاً نمایش داده شده */}
+  }catch(e){dlog({action:'navigateTo-'+v,status:'error',detail:e&&e.message?e.message:String(e)})}
 }
 
 function updateNavLinks(v){
@@ -804,7 +804,7 @@ async function adminLogin(){
   if(!u||!p){showToast('فیلدها الزامی','error');return}
   try{
     const a=await apiSafe('adminLogin',{username:u,password:p},'در حال ورود...');
-    APP.currentAdmin=a;APP.adminToken=a.token;APP.adminTab='lists';showToast('خوش آمدید','success');
+    APP.currentAdmin=a;APP.adminToken=a.token;APP.adminTab='users';showToast('خوش آمدید','success');
     await ensureBootstrap();
     navigateTo('admin');
   }catch(e){}
