@@ -278,9 +278,9 @@ td{padding:8px 12px;border-bottom:1px solid #21262d;white-space:nowrap}tr:hover 
 // تنظیمات — آدرس Web App اپس‌اسکریپت خود را اینجا جایگزین کنید
 // ============================================================================
 const CONFIG={
-  API_URL:'https://script.google.com/macros/s/AKfycbytxap1sObJTXolTFDfPXgMzIGJXIvKRxSWG5vgfCfsnDHc-NEJ5dAO97YNaOmdZhXW/exec' // مثال: https://script.google.com/macros/s/AKfycb.../exec
+  API_URL:'PUT_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE' // مثال: https://script.google.com/macros/s/AKfycb.../exec
 };
-const FRONTEND_BUILD_TAG='2026-07-14-fix-admintab-3'; // برای اطمینان از این‌که نسخه‌ی جدید فایل واقعاً روی سایت بارگذاری شده
+const FRONTEND_BUILD_TAG='2026-07-14-fix-family-bootstrap-4'; // برای اطمینان از این‌که نسخه‌ی جدید فایل واقعاً روی سایت بارگذاری شده
 
 // ==================== وضعیت برنامه ====================
 let APP={currentView:'landing',tempPhone:'',tempNID:'',tempOTP:'',otpTimerInterval:null,otpPurpose:'register',
@@ -408,7 +408,7 @@ async function navigateTo(v){
     if(v==='register'){await ensureBootstrap();buildForm('register')}
     if(v==='user-dashboard')await renderUserDashboard();
     if(v==='edit-profile'){await ensureBootstrap();buildForm('edit')}
-    if(v==='family-manage')await renderFamilyManage();
+    if(v==='family-manage'){await ensureBootstrap();await renderFamilyManage()}
     if(v==='admin')await renderAdminPanel();
   }catch(e){dlog({action:'navigateTo-'+v,status:'error',detail:e&&e.message?e.message:String(e)})}
 }
@@ -695,7 +695,8 @@ async function renderFamilyManage(){
   }catch(e){}
 }
 
-function addFamilyMember(){
+async function addFamilyMember(){
+  await ensureBootstrap();
   const techList=getTechSkills(),sportList=getSportSkills();
   APP.selectedFamilyHead='';APP.selectedRelation='';APP.selectedIsAdai='';APP.selectedSartaife='';APP.selectedTayefe='';
   showModal(`<h3 class="text-lg font-bold text-gold mb-4"><i class="fas fa-user-plus ml-2"></i>افزودن عضو</h3>
@@ -744,7 +745,8 @@ async function saveFM(){
   }catch(e){}
 }
 
-function editFM(id){
+async function editFM(id){
+  await ensureBootstrap();
   const m=(APP._familyCache||[]).find(x=>x.id===id);if(!m)return;
   const tl=getTechSkills(),sl=getSportSkills();
   APP.selectedRelation=m.relationToHead||'';APP.selectedIsAdai=m.isAdai||'';APP.selectedSartaife=m.sartaife||'';APP.selectedTayefe=m.tayefe||'';
