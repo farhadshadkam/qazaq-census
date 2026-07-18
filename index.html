@@ -219,6 +219,7 @@ td{padding:8px 12px;border-bottom:1px solid #21262d;white-space:nowrap}tr:hover 
   <div class="max-w-7xl mx-auto px-4 pt-20 pb-10">
     <div class="text-center mb-8"><h2 class="text-2xl font-bold mb-1">داشبورد آماری</h2></div>
     <div class="card max-w-2xl mx-auto mb-8" id="userProfileCard"></div>
+    <div id="familyCtaCard" class="max-w-2xl mx-auto mb-8"></div>
     <div id="userStatsRow" class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8"></div>
     <div id="userCharts" class="grid grid-cols-1 lg:grid-cols-2 gap-6"></div>
   </div>
@@ -280,7 +281,7 @@ td{padding:8px 12px;border-bottom:1px solid #21262d;white-space:nowrap}tr:hover 
 const CONFIG={
   API_URL:'https://script.google.com/macros/s/AKfycbytxap1sObJTXolTFDfPXgMzIGJXIvKRxSWG5vgfCfsnDHc-NEJ5dAO97YNaOmdZhXW/exec' // مثال: https://script.google.com/macros/s/AKfycb.../exec
 };
-const FRONTEND_BUILD_TAG='2026-07-14-fix-admin-padding-5'; // برای اطمینان از این‌که نسخه‌ی جدید فایل واقعاً روی سایت بارگذاری شده
+const FRONTEND_BUILD_TAG='2026-07-15-nickname-charts-filters-6'; // برای اطمینان از این‌که نسخه‌ی جدید فایل واقعاً روی سایت بارگذاری شده
 
 // ==================== وضعیت برنامه ====================
 let APP={currentView:'landing',tempPhone:'',tempNID:'',tempOTP:'',otpTimerInterval:null,otpPurpose:'register',
@@ -418,9 +419,9 @@ function updateNavLinks(v){
   if(v==='user-dashboard'||v==='edit-profile'||v==='family-manage'){
     const u=APP.currentUser;
     c.innerHTML=`<span class="text-muted text-sm hidden sm:inline">${u?u.firstName+' '+u.lastName:''}</span>
-      <button class="btn-outline btn-sm" onclick="navigateTo('user-dashboard')"><i class="fas fa-chart-bar"></i></button>
-      ${u&&u.isFamilyHead?'<button class="btn-outline btn-sm" onclick="navigateTo(\'family-manage\')"><i class="fas fa-people-group"></i></button>':''}
-      <button class="btn-outline btn-sm" onclick="APP.currentUser=null;navigateTo('landing')"><i class="fas fa-sign-out-alt"></i></button>`;
+      <button class="btn-outline btn-sm" onclick="navigateTo('user-dashboard')"><i class="fas fa-chart-bar ml-1"></i><span class="hidden sm:inline">داشبورد</span></button>
+      ${u&&u.isFamilyHead?'<button class="btn-gold btn-sm" onclick="navigateTo(\'family-manage\')"><i class="fas fa-people-group ml-1"></i><span class="hidden sm:inline">مدیریت خانوار</span></button>':''}
+      <button class="btn-outline btn-sm" onclick="APP.currentUser=null;navigateTo('landing')"><i class="fas fa-sign-out-alt ml-1"></i><span class="hidden sm:inline">خروج</span></button>`;
   }else if(v==='admin'){c.innerHTML=`<span class="text-muted text-sm">${APP.currentAdmin?APP.currentAdmin.name:''}</span><button class="btn-outline btn-sm" onclick="APP.currentAdmin=null;APP.adminToken=null;navigateTo('landing')">خروج</button>`}
   else c.innerHTML='';
 }
@@ -539,6 +540,7 @@ function buildForm(mode){
   h+=`<div class="card"><h3 class="text-gold font-bold mb-4"><i class="fas fa-user ml-2"></i>اطلاعات فردی</h3><div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
     <div><label class="block text-sm font-medium mb-1.5 text-muted">نام</label><input id="${p}FN" class="input-field" value="${u.firstName||''}"></div>
     <div><label class="block text-sm font-medium mb-1.5 text-muted">نام خانوادگی</label><input id="${p}LN" class="input-field" value="${u.lastName||''}"></div>
+    <div><label class="block text-sm font-medium mb-1.5 text-muted">نام مستعار (اختیاری)</label><input id="${p}NK" class="input-field" value="${u.nickname||''}"></div>
     <div><label class="block text-sm font-medium mb-1.5 text-muted">نام پدر</label><input id="${p}FaN" class="input-field" value="${u.fatherName||''}"></div>
     <div><label class="block text-sm font-medium mb-1.5 text-muted">نام پدربزرگ</label><input id="${p}GFN" class="input-field" value="${u.grandFatherName||''}"></div>
     <div><label class="block text-sm font-medium mb-1.5 text-muted">سال تولد</label><input id="${p}BY" type="number" min="1300" max="1410" class="input-field" value="${u.birthYear||''}"></div>
@@ -606,7 +608,7 @@ function selFH(p,nid,name){APP.selectedHeadNID=nid;APP.selectedHeadName=name;doc
 
 async function submitReg(){
   const gF=v=>document.getElementById(v).value.trim();
-  const d={fn:gF('rFN'),ln:gF('rLN'),fa:gF('rFaN'),gf:gF('rGFN'),by:parseInt(gF('rBY'))||0,jt:gF('rJT'),cd:gF('rCD'),ach:gF('rACH')};
+  const d={fn:gF('rFN'),ln:gF('rLN'),nk:gF('rNK'),fa:gF('rFaN'),gf:gF('rGFN'),by:parseInt(gF('rBY'))||0,jt:gF('rJT'),cd:gF('rCD'),ach:gF('rACH')};
   if(!d.fn||!d.ln||!d.fa){showToast('نام، نام خانوادگی و نام پدر الزامی','error');return}
   if(!d.by||d.by<1300||d.by>1410){showToast('سال تولد معتبر نیست','error');return}
   if(!APP.selectedGender||!APP.selectedFamilyHead||!APP.selectedEducation||!APP.selectedEmployment||!APP.selectedCity){showToast('همه فیلدهای انتخابی را پر کنید','error');return}
@@ -622,7 +624,7 @@ async function submitReg(){
     if(!APP.selectedRelation){showToast('نسبت خود با سرپرست را انتخاب کنید','error');return}
     try{const h=await apiSafe('getFamilyHeadByNID',{nationalId:fhNID},'در حال بررسی سرپرست...');if(!h){showToast('سرپرست یافت نشد','error');return}fhName=h.name}catch(e){return}
   }
-  const user={nationalId:APP.tempNID,phone:APP.tempPhone,gender:APP.selectedGender,isFamilyHead:APP.selectedFamilyHead==='بله',familyHeadNID:APP.selectedFamilyHead==='خیر'?fhNID:null,familyHeadName:APP.selectedFamilyHead==='خیر'?fhName:null,relationToHead:APP.selectedFamilyHead==='خیر'?APP.selectedRelation:'سرپرست',firstName:d.fn,lastName:d.ln,fatherName:d.fa,grandFatherName:d.gf,birthYear:d.by,education:APP.selectedEducation,employment:APP.selectedEmployment,jobTitle:d.jt,city:APP.selectedCity,cityDesc:d.cd,techSkills:[...APP.selectedTechSkills],sportSkills:[...APP.selectedSportSkills],achievements:d.ach,isAdai:needsOwnTribe?APP.selectedIsAdai:'',sartaife:needsOwnTribe?APP.selectedSartaife:'',tayefe:needsOwnTribe?APP.selectedTayefe:'',addedByHead:false};
+  const user={nationalId:APP.tempNID,phone:APP.tempPhone,gender:APP.selectedGender,isFamilyHead:APP.selectedFamilyHead==='بله',familyHeadNID:APP.selectedFamilyHead==='خیر'?fhNID:null,familyHeadName:APP.selectedFamilyHead==='خیر'?fhName:null,relationToHead:APP.selectedFamilyHead==='خیر'?APP.selectedRelation:'سرپرست',firstName:d.fn,lastName:d.ln,nickname:d.nk,fatherName:d.fa,grandFatherName:d.gf,birthYear:d.by,education:APP.selectedEducation,employment:APP.selectedEmployment,jobTitle:d.jt,city:APP.selectedCity,cityDesc:d.cd,techSkills:[...APP.selectedTechSkills],sportSkills:[...APP.selectedSportSkills],achievements:d.ach,isAdai:needsOwnTribe?APP.selectedIsAdai:'',sartaife:needsOwnTribe?APP.selectedSartaife:'',tayefe:needsOwnTribe?APP.selectedTayefe:'',addedByHead:false};
   try{
     const saved=await apiSafe('registerUser',{user:user},'در حال ثبت اطلاعات...');
     APP.currentUser=saved;showToast('ثبت شد','success');navigateTo('user-dashboard');
@@ -630,12 +632,12 @@ async function submitReg(){
 }
 async function saveEdit(){
   const gF=v=>document.getElementById(v).value.trim();const u=APP.currentUser;if(!u)return;
-  const d={fn:gF('eFN'),ln:gF('eLN'),fa:gF('eFaN'),gf:gF('eGFN'),by:parseInt(gF('eBY'))||0,jt:gF('eJT'),cd:gF('eCD'),ach:gF('eACH')};
+  const d={fn:gF('eFN'),ln:gF('eLN'),nk:gF('eNK'),fa:gF('eFaN'),gf:gF('eGFN'),by:parseInt(gF('eBY'))||0,jt:gF('eJT'),cd:gF('eCD'),ach:gF('eACH')};
   if(!d.fn||!d.ln||!d.fa){showToast('نام، نام خانوادگی و نام پدر الزامی','error');return}
   const needsOwnTribe=u.isFamilyHead||INDEPENDENT_TRIBE_RELATIONS.includes(APP.selectedRelation);
   if(!u.isFamilyHead&&!APP.selectedRelation){showToast('نسبت خود با سرپرست را انتخاب کنید','error');return}
   if(needsOwnTribe&&(!APP.selectedIsAdai||!APP.selectedSartaife)){showToast('طایفه و سرطایفه/نام عشیره الزامی است','error');return}
-  const fields={firstName:d.fn,lastName:d.ln,fatherName:d.fa,grandFatherName:d.gf,birthYear:d.by||u.birthYear,gender:APP.selectedGender,education:APP.selectedEducation,employment:APP.selectedEmployment,jobTitle:d.jt,city:APP.selectedCity,cityDesc:d.cd,techSkills:[...APP.selectedTechSkills],sportSkills:[...APP.selectedSportSkills],achievements:d.ach,relationToHead:u.isFamilyHead?'سرپرست':APP.selectedRelation,isAdai:needsOwnTribe?APP.selectedIsAdai:'',sartaife:needsOwnTribe?APP.selectedSartaife:'',tayefe:needsOwnTribe?APP.selectedTayefe:''};
+  const fields={firstName:d.fn,lastName:d.ln,nickname:d.nk,fatherName:d.fa,grandFatherName:d.gf,birthYear:d.by||u.birthYear,gender:APP.selectedGender,education:APP.selectedEducation,employment:APP.selectedEmployment,jobTitle:d.jt,city:APP.selectedCity,cityDesc:d.cd,techSkills:[...APP.selectedTechSkills],sportSkills:[...APP.selectedSportSkills],achievements:d.ach,relationToHead:u.isFamilyHead?'سرپرست':APP.selectedRelation,isAdai:needsOwnTribe?APP.selectedIsAdai:'',sartaife:needsOwnTribe?APP.selectedSartaife:'',tayefe:needsOwnTribe?APP.selectedTayefe:''};
   try{
     const updated=await apiSafe('updateSelf',{id:u.id,nationalId:u.nationalId,phone:u.phone,fields:fields},'در حال ذخیره...');
     APP.currentUser=updated;showToast('ذخیره شد','success');navigateTo('user-dashboard');
@@ -648,11 +650,16 @@ async function renderUserDashboard(){
   document.getElementById('userProfileCard').innerHTML=`
     <div class="flex items-center justify-between mb-4"><h3 class="text-gold font-bold text-lg"><i class="fas fa-user-circle ml-2"></i>پروفایل شما</h3><button class="btn-gold btn-sm" onclick="navigateTo('edit-profile')"><i class="fas fa-edit ml-1"></i>ویرایش</button></div>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-8">
-      ${[['نام و نام خانوادگی',u.firstName+' '+u.lastName],['نام پدر',u.fatherName],['نام پدربزرگ',u.grandFatherName||'—'],['جنسیت',u.gender],['سال تولد',u.birthYear],['تحصیلات',u.education],['اشتغال',u.employment],['شغل',u.jobTitle||'—'],['شهرستان',u.city],['آدای',u.isAdai||'—'],['سرطایفه',u.sartaife||'—'],['طایفه',u.tayefe||'—'],['سرپرست',u.isFamilyHead?'بله':'خیر']].map(([l,v])=>`<div class="info-row"><span class="info-label">${l}</span><span class="info-value">${v}</span></div>`).join('')}
+      ${[['نام و نام خانوادگی',u.firstName+' '+u.lastName],['نام مستعار',u.nickname||'—'],['نام پدر',u.fatherName],['نام پدربزرگ',u.grandFatherName||'—'],['جنسیت',u.gender],['سال تولد',u.birthYear],['تحصیلات',u.education],['اشتغال',u.employment],['شغل',u.jobTitle||'—'],['شهرستان',u.city],['آدای',u.isAdai||'—'],['سرطایفه',u.sartaife||'—'],['طایفه',u.tayefe||'—'],['سرپرست',u.isFamilyHead?'بله':'خیر']].map(([l,v])=>`<div class="info-row"><span class="info-label">${l}</span><span class="info-value">${v}</span></div>`).join('')}
     </div>
     ${(u.techSkills||[]).length?`<div class="mt-3"><span class="text-muted text-xs">مهارت فنی: </span>${u.techSkills.map(s=>`<span class="badge badge-gold mr-1">${s}</span>`).join('')}</div>`:''}
     ${(u.sportSkills||[]).length?`<div class="mt-2"><span class="text-muted text-xs">مهارت ورزشی: </span>${u.sportSkills.map(s=>`<span class="badge badge-teal mr-1">${s}</span>`).join('')}</div>`:''}
     ${u.achievements?`<div class="mt-2"><span class="text-muted text-xs">افتخارات: </span><span class="text-sm">${u.achievements}</span></div>`:''}`;
+  document.getElementById('familyCtaCard').innerHTML=u.isFamilyHead?`
+    <div class="card flex flex-col sm:flex-row items-center justify-between gap-3" style="border-color:#d4a843">
+      <div class="flex items-center gap-3"><i class="fas fa-people-group text-gold text-2xl"></i><div><p class="font-bold">شما سرپرست خانوار هستید</p><p class="text-muted text-xs">اعضای خانواده‌ی خود را از اینجا اضافه، ویرایش یا حذف کنید</p></div></div>
+      <button class="btn-gold w-full sm:w-auto" onclick="navigateTo('family-manage')"><i class="fas fa-plus ml-1"></i>مدیریت اعضای خانوار</button>
+    </div>`:'';
   try{
     const stats=await apiSafe('getStats',{},'در حال بارگذاری آمار...');
     renderStatsFromStats('userStatsRow',stats);renderChartsFromStats('userCharts',stats);
@@ -664,23 +671,88 @@ function renderStatsFromStats(id,stats){
   [{n:stats.total,l:'کل',i:'fa-users',cl:'gold'},{n:stats.male,l:'مرد',i:'fa-mars',cl:'teal'},{n:stats.female,l:'زن',i:'fa-venus',cl:'gold'},{n:stats.heads,l:'سرپرست',i:'fa-house-chimney',cl:'teal'}].forEach(s=>{c.innerHTML+=`<div class="stat-card"><i class="fas ${s.i} text-${s.cl} text-xl mb-2"></i><div class="num">${s.n}</div><div class="label">${s.l}</div></div>`});
 }
 
+// رنگ‌های کاملاً متمایز برای هر تعداد دسته (پخش‌شده روی چرخه‌ی رنگ به‌جای طیف محدود طلایی/سبز قبلی)
+function distinctColors(n){
+  const colors=[];
+  for(let i=0;i<n;i++){
+    const hue=Math.round((360/Math.max(n,1))*i);
+    const sat=62+((i%3)*10);
+    const light=48+((i%2)*10);
+    colors.push(`hsl(${hue},${sat}%,${light}%)`);
+  }
+  return colors;
+}
+
+// نمایش مقدار روی خودِ نمودار (میله‌ای و قرصی)، بدون نیاز به بردن موس روی آن
+if(!APP._valueLabelPluginRegistered){
+  Chart.register({
+    id:'valueLabelPlugin',
+    afterDatasetsDraw(chart){
+      const {ctx}=chart;
+      chart.data.datasets.forEach((dataset,dsIndex)=>{
+        const meta=chart.getDatasetMeta(dsIndex);
+        meta.data.forEach((el,i)=>{
+          const value=dataset.data[i];
+          if(value===undefined||value===null||value===0)return;
+          const pos=el.tooltipPosition?el.tooltipPosition():el.getCenterPoint();
+          ctx.save();ctx.font='bold 11px Vazirmatn';
+          if(chart.config.type==='pie'){
+            ctx.textAlign='center';ctx.textBaseline='middle';
+            ctx.strokeStyle='rgba(0,0,0,.65)';ctx.lineWidth=3;ctx.strokeText(value,pos.x,pos.y);
+            ctx.fillStyle='#fff';ctx.fillText(value,pos.x,pos.y);
+          }else if(chart.options.indexAxis==='y'){
+            ctx.textAlign='left';ctx.textBaseline='middle';ctx.fillStyle='#e6edf3';
+            ctx.fillText(value,pos.x+6,pos.y);
+          }else{
+            ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillStyle='#e6edf3';
+            ctx.fillText(value,pos.x,pos.y-4);
+          }
+          ctx.restore();
+        });
+      });
+    }
+  });
+  APP._valueLabelPluginRegistered=true;
+}
+
 function renderChartsFromStats(cid,stats){
   const c=document.getElementById(cid);
   if(!stats.total){c.innerHTML='<div class="col-span-full text-center text-muted py-20"><i class="fas fa-chart-bar text-4xl mb-4 block opacity-30"></i>هنوز داده‌ای ثبت نشده</div>';return}
-  const gC=['#d4a843','#e8c86a','#b8922e','#c2956a','#a07d3f','#f0d78c','#8b6914','#d4b876','#c4a04a','#e0c468','#c2956a','#a07d3f','#f0d78c','#8b6914','#d4b876'];
-  const tC=['#2ea58e','#3bc4a8','#238470','#47d4b8','#1a6b5a','#5de4c8','#0f5040','#6df4d8','#2ea58e','#3bc4a8','#238470','#47d4b8'];
-  const co={responsive:true,plugins:{legend:{labels:{color:'#8b949e',font:{family:'Vazirmatn',size:11}}}}};
+  const co={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8b949e',font:{family:'Vazirmatn',size:11}}}}};
   const bo={...co,scales:{x:{ticks:{color:'#8b949e',font:{family:'Vazirmatn',size:10}},grid:{color:'#21262d'}},y:{ticks:{color:'#8b949e',font:{family:'Vazirmatn'}},grid:{color:'#21262d'},beginAtZero:true}}};
   const po={...co,plugins:{...co.plugins,legend:{position:'bottom',labels:{color:'#8b949e',font:{family:'Vazirmatn',size:11},padding:12}}}};
-  c.innerHTML=['سطح سرطایفه‌ها:ch-st:pie','نسبت جنسیت:ch-gn:pie','طایفه‌ها:ch-ty:bar','تحصیلات:ch-ed:bar','اشتغال:ch-em:bar','مهارت فنی:ch-tc:bar','مهارت ورزشی:ch-sp:bar','شهرستان‌ها:ch-ct:bar'].map(x=>{const[t,id]=x.split(':');return`<div class="card"><h4 class="font-bold text-gold mb-3 text-sm">${t}</h4><canvas id="${id}"></canvas></div>`}).join('');
-  const d1=stats.bySartaife;APP.chartInstances.push(new Chart(document.getElementById('ch-st'),{type:'pie',data:{labels:Object.keys(d1),datasets:[{data:Object.values(d1),backgroundColor:gC}]},options:po}));
-  const d2=stats.byGender;APP.chartInstances.push(new Chart(document.getElementById('ch-gn'),{type:'pie',data:{labels:Object.keys(d2),datasets:[{data:Object.values(d2),backgroundColor:['#2ea58e','#d4a843']}]},options:po}));
-  const d3=stats.byTayefe;APP.chartInstances.push(new Chart(document.getElementById('ch-ty'),{type:'bar',data:{labels:Object.keys(d3),datasets:[{label:'تعداد',data:Object.values(d3),backgroundColor:tC}]},options:{...bo,indexAxis:'y'}}));
-  const d4=stats.byEducation;APP.chartInstances.push(new Chart(document.getElementById('ch-ed'),{type:'bar',data:{labels:Object.keys(d4),datasets:[{label:'تعداد',data:Object.values(d4),backgroundColor:gC}]},options:{...bo,indexAxis:'y'}}));
-  const d5=stats.byEmployment;APP.chartInstances.push(new Chart(document.getElementById('ch-em'),{type:'bar',data:{labels:Object.keys(d5),datasets:[{label:'تعداد',data:Object.values(d5),backgroundColor:tC}]},options:{...bo,indexAxis:'y'}}));
-  const d6=stats.byTechSkill;APP.chartInstances.push(new Chart(document.getElementById('ch-tc'),{type:'bar',data:{labels:Object.keys(d6),datasets:[{label:'تعداد',data:Object.values(d6),backgroundColor:gC}]},options:{...bo,indexAxis:'y'}}));
-  const d7=stats.bySportSkill;APP.chartInstances.push(new Chart(document.getElementById('ch-sp'),{type:'bar',data:{labels:Object.keys(d7),datasets:[{label:'تعداد',data:Object.values(d7),backgroundColor:tC}]},options:{...bo,indexAxis:'y'}}));
-  const d8=stats.byCity;APP.chartInstances.push(new Chart(document.getElementById('ch-ct'),{type:'bar',data:{labels:Object.keys(d8),datasets:[{label:'تعداد',data:Object.values(d8),backgroundColor:gC}]},options:bo}));
+  // ترتیب صحیح گروه‌های سنی (نه بر اساس حروف الفبا)
+  const ageOrder=Object.keys(stats.byAgeGroup||{}).sort((a,b)=>{
+    const an=parseInt(a),bn=parseInt(b);
+    if(isNaN(an))return 1;if(isNaN(bn))return -1;return an-bn;
+  });
+  const charts=[
+    {t:'سطح سرطایفه‌ها',id:'ch-st',type:'pie',data:stats.bySartaife},
+    {t:'نسبت جنسیت',id:'ch-gn',type:'pie',data:stats.byGender,colors:['#2ea58e','#d4a843']},
+    {t:'گروه‌های سنی (۵ ساله)',id:'ch-age',type:'bar',data:stats.byAgeGroup,order:ageOrder,vertical:true},
+    {t:'طایفه‌ها',id:'ch-ty',type:'bar',data:stats.byTayefe},
+    {t:'تحصیلات',id:'ch-ed',type:'bar',data:stats.byEducation},
+    {t:'اشتغال',id:'ch-em',type:'bar',data:stats.byEmployment},
+    {t:'مهارت فنی',id:'ch-tc',type:'bar',data:stats.byTechSkill},
+    {t:'مهارت ورزشی',id:'ch-sp',type:'bar',data:stats.bySportSkill},
+    {t:'شهرستان‌ها',id:'ch-ct',type:'bar',data:stats.byCity,vertical:true}
+  ];
+  c.innerHTML=charts.map(ch=>{
+    const n=Object.keys(ch.data||{}).length;
+    const h=ch.type==='pie'?300:(ch.vertical?260:Math.max(180,n*34+40));
+    return `<div class="card"><h4 class="font-bold text-gold mb-3 text-sm">${ch.t}</h4><div style="height:${h}px"><canvas id="${ch.id}"></canvas></div></div>`;
+  }).join('');
+  charts.forEach(ch=>{
+    const labels=ch.order||Object.keys(ch.data||{});
+    const values=labels.map(l=>ch.data[l]);
+    const colors=ch.colors||distinctColors(labels.length);
+    const el=document.getElementById(ch.id);if(!el)return;
+    if(ch.type==='pie'){
+      APP.chartInstances.push(new Chart(el,{type:'pie',data:{labels,datasets:[{data:values,backgroundColor:colors}]},options:po}));
+    }else{
+      APP.chartInstances.push(new Chart(el,{type:'bar',data:{labels,datasets:[{label:'تعداد',data:values,backgroundColor:colors}]},options:{...bo,indexAxis:ch.vertical?'x':'y'}}));
+    }
+  });
 }
 
 // ==================== مدیریت خانوار ====================
@@ -705,6 +777,7 @@ async function addFamilyMember(){
         <div><label class="block text-xs text-muted mb-1">کد ملی</label><input id="fmNID" class="input-field" maxlength="10" inputmode="numeric"></div>
         <div><label class="block text-xs text-muted mb-1">نام</label><input id="fmFN" class="input-field"></div>
         <div><label class="block text-xs text-muted mb-1">نام خانوادگی</label><input id="fmLN" class="input-field"></div>
+        <div><label class="block text-xs text-muted mb-1">نام مستعار (اختیاری)</label><input id="fmNK" class="input-field"></div>
         <div><label class="block text-xs text-muted mb-1">نام پدر</label><input id="fmFa" class="input-field"></div>
         <div><label class="block text-xs text-muted mb-1">نام پدربزرگ</label><input id="fmGF" class="input-field"></div>
         <div><label class="block text-xs text-muted mb-1">سال تولد</label><input id="fmYR" type="number" class="input-field" min="1300" max="1410"></div>
@@ -738,7 +811,7 @@ async function saveFM(){
   if(needsOwnTribe&&(!APP.selectedIsAdai||!APP.selectedSartaife)){showToast('برای این نسبت، اطلاعات طایفه الزامی است','error');return}
   const tc=[],sp=[];document.getElementById('fmTC').querySelectorAll('.chip.selected').forEach(c=>tc.push(c.textContent));
   document.getElementById('fmSP').querySelectorAll('.chip.selected').forEach(c=>sp.push(c.textContent));
-  const member={nationalId:nid,gender:document.getElementById('fmGN').value,firstName:fn,lastName:ln,fatherName:fa,grandFatherName:document.getElementById('fmGF').value.trim(),birthYear:parseInt(document.getElementById('fmYR').value)||0,education:document.getElementById('fmED').value,employment:document.getElementById('fmEM').value,jobTitle:document.getElementById('fmJT').value.trim(),city:document.getElementById('fmCT').value,relationToHead:relation,isAdai:needsOwnTribe?APP.selectedIsAdai:'',sartaife:needsOwnTribe?APP.selectedSartaife:'',tayefe:needsOwnTribe?APP.selectedTayefe:'',techSkills:tc,sportSkills:sp,achievements:document.getElementById('fmACH').value.trim()};
+  const member={nationalId:nid,gender:document.getElementById('fmGN').value,firstName:fn,lastName:ln,nickname:document.getElementById('fmNK').value.trim(),fatherName:fa,grandFatherName:document.getElementById('fmGF').value.trim(),birthYear:parseInt(document.getElementById('fmYR').value)||0,education:document.getElementById('fmED').value,employment:document.getElementById('fmEM').value,jobTitle:document.getElementById('fmJT').value.trim(),city:document.getElementById('fmCT').value,relationToHead:relation,isAdai:needsOwnTribe?APP.selectedIsAdai:'',sartaife:needsOwnTribe?APP.selectedSartaife:'',tayefe:needsOwnTribe?APP.selectedTayefe:'',techSkills:tc,sportSkills:sp,achievements:document.getElementById('fmACH').value.trim()};
   try{
     await apiSafe('addFamilyMember',{headNID:APP.currentUser.nationalId,headPhone:APP.currentUser.phone,member:member},'در حال ثبت...');
     closeModal();showToast('اضافه شد','success');renderFamilyManage();
@@ -759,6 +832,7 @@ async function editFM(id){
       <div class="grid grid-cols-2 gap-3">
         <div><label class="block text-xs text-muted mb-1">نام</label><input id="efFN" class="input-field" value="${m.firstName}"></div>
         <div><label class="block text-xs text-muted mb-1">نام خانوادگی</label><input id="efLN" class="input-field" value="${m.lastName}"></div>
+        <div><label class="block text-xs text-muted mb-1">نام مستعار (اختیاری)</label><input id="efNK" class="input-field" value="${m.nickname||''}"></div>
         <div><label class="block text-xs text-muted mb-1">نام پدر</label><input id="efFa" class="input-field" value="${m.fatherName}"></div>
         <div><label class="block text-xs text-muted mb-1">نام پدربزرگ</label><input id="efGF" class="input-field" value="${m.grandFatherName||''}"></div>
         <div><label class="block text-xs text-muted mb-1">سال تولد</label><input id="efYR" type="number" class="input-field" value="${m.birthYear}"></div>
@@ -789,7 +863,7 @@ async function saveEFM(id){
   if(needsOwnTribe&&(!APP.selectedIsAdai||!APP.selectedSartaife)){showToast('برای این نسبت، اطلاعات طایفه الزامی است','error');return}
   const tc=[],sp=[];document.getElementById('efTC').querySelectorAll('.chip.selected').forEach(c=>tc.push(c.textContent));
   document.getElementById('efSP').querySelectorAll('.chip.selected').forEach(c=>sp.push(c.textContent));
-  const fields={firstName:document.getElementById('efFN').value.trim(),lastName:document.getElementById('efLN').value.trim(),fatherName:document.getElementById('efFa').value.trim(),grandFatherName:document.getElementById('efGF').value.trim(),birthYear:parseInt(document.getElementById('efYR').value)||0,gender:document.getElementById('efGN').value,education:document.getElementById('efED').value,employment:document.getElementById('efEM').value,jobTitle:document.getElementById('efJT').value.trim(),city:document.getElementById('efCT').value,relationToHead:relation,isAdai:needsOwnTribe?APP.selectedIsAdai:'',sartaife:needsOwnTribe?APP.selectedSartaife:'',tayefe:needsOwnTribe?APP.selectedTayefe:'',techSkills:tc,sportSkills:sp,achievements:document.getElementById('efACH').value.trim()};
+  const fields={firstName:document.getElementById('efFN').value.trim(),lastName:document.getElementById('efLN').value.trim(),nickname:document.getElementById('efNK').value.trim(),fatherName:document.getElementById('efFa').value.trim(),grandFatherName:document.getElementById('efGF').value.trim(),birthYear:parseInt(document.getElementById('efYR').value)||0,gender:document.getElementById('efGN').value,education:document.getElementById('efED').value,employment:document.getElementById('efEM').value,jobTitle:document.getElementById('efJT').value.trim(),city:document.getElementById('efCT').value,relationToHead:relation,isAdai:needsOwnTribe?APP.selectedIsAdai:'',sartaife:needsOwnTribe?APP.selectedSartaife:'',tayefe:needsOwnTribe?APP.selectedTayefe:'',techSkills:tc,sportSkills:sp,achievements:document.getElementById('efACH').value.trim()};
   try{
     await apiSafe('updateFamilyMember',{headNID:APP.currentUser.nationalId,headPhone:APP.currentUser.phone,id:id,fields:fields},'در حال ذخیره...');
     closeModal();showToast('ذخیره شد','success');renderFamilyManage();
@@ -830,18 +904,39 @@ async function renderAdminUsers(c){
     APP.adminUsersCache=users;
     let h=`<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">`;
     [{n:users.length,l:'کل',i:'fa-users',cl:'gold'},{n:users.filter(u=>u.gender==='مرد').length,l:'مرد',i:'fa-mars',cl:'teal'},{n:users.filter(u=>u.gender==='زن').length,l:'زن',i:'fa-venus',cl:'gold'},{n:users.filter(u=>u.isFamilyHead).length,l:'سرپرست',i:'fa-house-chimney',cl:'teal'}].forEach(s=>{h+=`<div class="stat-card"><i class="fas ${s.i} text-${s.cl} text-xl mb-2"></i><div class="num">${s.n}</div><div class="label">${s.l}</div></div>`});
-    h+=`</div><div class="mb-4 flex flex-wrap gap-2 items-center"><input id="aSrc" class="input-field" style="max-width:300px" placeholder="جستجو..." oninput="filtAU()">
-      <button class="btn-outline btn-sm" onclick="exportExcel()"><i class="fas fa-file-excel ml-1" style="color:#2ea58e"></i>خروجی اکسل</button>
-      <button class="btn-outline btn-sm" onclick="exportCSV()"><i class="fas fa-file-csv ml-1"></i>خروجی CSV</button></div>`;
-    h+=`<div class="table-container"><table><thead><tr><th>ردیف</th><th>نام</th><th>پدر</th><th>پدربزرگ</th><th>کد ملی</th><th>موبایل</th><th>جنسیت</th><th>تحصیلات</th><th>شغل</th><th>شهر</th><th>آدای</th><th>سرطایفه</th><th>طایفه</th><th>سرپرست</th><th>عملیات</th></tr></thead><tbody id="aUB"></tbody></table></div>`;
+    h+=`</div><div class="mb-4 p-3 rounded-xl border border-border bg-bg/40">
+      <div class="flex flex-wrap gap-2 items-end mb-2">
+        <div><label class="block text-xs text-muted mb-1">نام</label><input id="fltFN" class="input-field" style="width:130px" placeholder="نام" oninput="filtAU()"></div>
+        <div><label class="block text-xs text-muted mb-1">نام خانوادگی</label><input id="fltLN" class="input-field" style="width:130px" placeholder="نام خانوادگی" oninput="filtAU()"></div>
+        <div><label class="block text-xs text-muted mb-1">شهرستان</label><select id="fltCT" class="input-field" style="width:150px" onchange="filtAU()"><option value="">همه</option>${getCities().map(c=>`<option>${c}</option>`).join('')}</select></div>
+        <div><label class="block text-xs text-muted mb-1">سرطایفه</label><input id="fltST" class="input-field" style="width:140px" placeholder="سرطایفه" oninput="filtAU()"></div>
+        <div><label class="block text-xs text-muted mb-1">طایفه</label><input id="fltTY" class="input-field" style="width:140px" placeholder="طایفه" oninput="filtAU()"></div>
+        <button class="btn-outline btn-sm" onclick="resetAUFilters()"><i class="fas fa-xmark ml-1"></i>پاک کردن فیلترها</button>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button class="btn-outline btn-sm" onclick="exportExcel()"><i class="fas fa-file-excel ml-1" style="color:#2ea58e"></i>خروجی اکسل</button>
+        <button class="btn-outline btn-sm" onclick="exportCSV()"><i class="fas fa-file-csv ml-1"></i>خروجی CSV</button>
+      </div></div>`;
+    h+=`<div class="table-container"><table><thead><tr><th>ردیف</th><th>نام</th><th>نام مستعار</th><th>پدر</th><th>پدربزرگ</th><th>کد ملی</th><th>موبایل</th><th>جنسیت</th><th>تحصیلات</th><th>شغل</th><th>شهر</th><th>آدای</th><th>سرطایفه</th><th>طایفه</th><th>سرپرست</th><th>عملیات</th></tr></thead><tbody id="aUB"></tbody></table></div>`;
     c.innerHTML=h;filtAU();
   }catch(e){}
 }
+function resetAUFilters(){['fltFN','fltLN','fltST','fltTY'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});const ct=document.getElementById('fltCT');if(ct)ct.value='';filtAU()}
 function filtAU(){
-  const q=(document.getElementById('aSrc')?.value||'').trim().toLowerCase();let users=APP.adminUsersCache||[];if(q)users=users.filter(u=>(u.firstName+' '+u.lastName).toLowerCase().includes(q)||u.nationalId.includes(q)||(u.phone||'').includes(q));
+  const fn=(document.getElementById('fltFN')?.value||'').trim().toLowerCase();
+  const ln=(document.getElementById('fltLN')?.value||'').trim().toLowerCase();
+  const ct=(document.getElementById('fltCT')?.value||'');
+  const st=(document.getElementById('fltST')?.value||'').trim().toLowerCase();
+  const ty=(document.getElementById('fltTY')?.value||'').trim().toLowerCase();
+  let users=APP.adminUsersCache||[];
+  if(fn)users=users.filter(u=>(u.firstName||'').toLowerCase().includes(fn));
+  if(ln)users=users.filter(u=>(u.lastName||'').toLowerCase().includes(ln));
+  if(ct)users=users.filter(u=>u.city===ct);
+  if(st)users=users.filter(u=>(u.sartaife||'').toLowerCase().includes(st));
+  if(ty)users=users.filter(u=>(u.tayefe||'').toLowerCase().includes(ty));
   const b=document.getElementById('aUB');if(!b)return;
-  if(!users.length){b.innerHTML='<tr><td colspan="15" class="text-center text-muted py-8">یافت نشد</td></tr>';return}
-  b.innerHTML=users.map((u,i)=>`<tr><td>${i+1}</td><td class="font-bold">${u.firstName} ${u.lastName}</td><td>${u.fatherName}</td><td>${u.grandFatherName||'—'}</td><td>${u.nationalId}</td><td dir="ltr">${u.phone||'—'}</td><td><span class="badge ${u.gender==='مرد'?'badge-teal':'badge-gold'}">${u.gender}</span></td><td>${u.education}</td><td>${u.employment}</td><td>${u.city}</td><td>${u.isAdai||'—'}</td><td>${u.sartaife||'—'}</td><td>${u.tayefe||'—'}</td><td>${u.isFamilyHead?'<span class="badge badge-gold">بله</span>':'خیر'}</td><td><div class="flex gap-1"><button class="btn-outline btn-sm" style="padding:4px 10px;font-size:11px" onclick="adminEU('${u.id}')"><i class="fas fa-edit"></i></button><button class="btn-danger btn-sm" style="padding:4px 10px;font-size:11px" onclick="adminDU('${u.id}')"><i class="fas fa-trash"></i></button></div></td></tr>`).join('');
+  if(!users.length){b.innerHTML='<tr><td colspan="16" class="text-center text-muted py-8">یافت نشد</td></tr>';return}
+  b.innerHTML=users.map((u,i)=>`<tr><td>${i+1}</td><td class="font-bold">${u.firstName} ${u.lastName}</td><td>${u.nickname||'—'}</td><td>${u.fatherName}</td><td>${u.grandFatherName||'—'}</td><td>${u.nationalId}</td><td dir="ltr">${u.phone||'—'}</td><td><span class="badge ${u.gender==='مرد'?'badge-teal':'badge-gold'}">${u.gender}</span></td><td>${u.education}</td><td>${u.employment}</td><td>${u.city}</td><td>${u.isAdai||'—'}</td><td>${u.sartaife||'—'}</td><td>${u.tayefe||'—'}</td><td>${u.isFamilyHead?'<span class="badge badge-gold">بله</span>':'خیر'}</td><td><div class="flex gap-1"><button class="btn-outline btn-sm" style="padding:4px 10px;font-size:11px" onclick="adminEU('${u.id}')"><i class="fas fa-edit"></i></button><button class="btn-danger btn-sm" style="padding:4px 10px;font-size:11px" onclick="adminDU('${u.id}')"><i class="fas fa-trash"></i></button></div></td></tr>`).join('');
 }
 
 function adminEU(id){
@@ -851,6 +946,7 @@ function adminEU(id){
       <div class="grid grid-cols-2 gap-3">
         <div><label class="block text-xs text-muted mb-1">نام</label><input id="auFN" class="input-field" value="${u.firstName}"></div>
         <div><label class="block text-xs text-muted mb-1">نام خانوادگی</label><input id="auLN" class="input-field" value="${u.lastName}"></div>
+        <div><label class="block text-xs text-muted mb-1">نام مستعار</label><input id="auNK" class="input-field" value="${u.nickname||''}"></div>
         <div><label class="block text-xs text-muted mb-1">نام پدر</label><input id="auFa" class="input-field" value="${u.fatherName}"></div>
         <div><label class="block text-xs text-muted mb-1">نام پدربزرگ</label><input id="auGF" class="input-field" value="${u.grandFatherName||''}"></div>
         <div><label class="block text-xs text-muted mb-1">کد ملی</label><input id="auNID" class="input-field" value="${u.nationalId}" maxlength="10"></div>
@@ -872,7 +968,7 @@ function adminEU(id){
     </div>`);
 }
 async function saveAU(id){
-  const fields={firstName:document.getElementById('auFN').value.trim(),lastName:document.getElementById('auLN').value.trim(),fatherName:document.getElementById('auFa').value.trim(),grandFatherName:document.getElementById('auGF').value.trim(),nationalId:document.getElementById('auNID').value.trim(),birthYear:parseInt(document.getElementById('auYR').value)||0,gender:document.getElementById('auGN').value,education:document.getElementById('auED').value,employment:document.getElementById('auEM').value,jobTitle:document.getElementById('auJT').value.trim(),city:document.getElementById('auCT').value,cityDesc:document.getElementById('auCD').value.trim(),relationToHead:document.getElementById('auREL').value,isAdai:document.getElementById('auAD').value,sartaife:document.getElementById('auST').value.trim(),tayefe:document.getElementById('auTY').value.trim(),phone:document.getElementById('auPH').value.trim(),achievements:document.getElementById('auACH').value.trim()};
+  const fields={firstName:document.getElementById('auFN').value.trim(),lastName:document.getElementById('auLN').value.trim(),nickname:document.getElementById('auNK').value.trim(),fatherName:document.getElementById('auFa').value.trim(),grandFatherName:document.getElementById('auGF').value.trim(),nationalId:document.getElementById('auNID').value.trim(),birthYear:parseInt(document.getElementById('auYR').value)||0,gender:document.getElementById('auGN').value,education:document.getElementById('auED').value,employment:document.getElementById('auEM').value,jobTitle:document.getElementById('auJT').value.trim(),city:document.getElementById('auCT').value,cityDesc:document.getElementById('auCD').value.trim(),relationToHead:document.getElementById('auREL').value,isAdai:document.getElementById('auAD').value,sartaife:document.getElementById('auST').value.trim(),tayefe:document.getElementById('auTY').value.trim(),phone:document.getElementById('auPH').value.trim(),achievements:document.getElementById('auACH').value.trim()};
   try{await apiSafe('adminUpdateUser',{id:id,fields:fields},'در حال ذخیره...');closeModal();showToast('ذخیره شد','success');renderAdminPanel()}catch(e){}
 }
 async function adminDU(id){
@@ -883,17 +979,17 @@ async function adminDU(id){
 // ---- خروجی اکسل / CSV ----
 function exportExcel(){
   const users=APP.adminUsersCache||[];if(!users.length){showToast('داده‌ای نیست','error');return}
-  const data=users.map(u=>({'کد ملی':u.nationalId,'نام':u.firstName,'نام خانوادگی':u.lastName,'نام پدر':u.fatherName,'نام پدربزرگ':u.grandFatherName||'','جنسیت':u.gender,'سال تولد':u.birthYear,'تحصیلات':u.education,'نوع اشتغال':u.employment,'عنوان شغل':u.jobTitle||'','شهرستان':u.city,'توضیحات سکونت':u.cityDesc||'','آدای':u.isAdai||'','سرطایفه':u.sartaife||'','طایفه':u.tayefe||'','سرپرست خانوار':u.isFamilyHead?'بله':'خیر','نام سرپرست':u.familyHeadName||'','شماره موبایل':u.phone||'','مهارت فنی':(u.techSkills||[]).join(' | '),'مهارت ورزشی':(u.sportSkills||[]).join(' | '),'افتخارات':u.achievements||''}));
+  const data=users.map(u=>({'کد ملی':u.nationalId,'نام':u.firstName,'نام خانوادگی':u.lastName,'نام مستعار':u.nickname||'','نام پدر':u.fatherName,'نام پدربزرگ':u.grandFatherName||'','جنسیت':u.gender,'سال تولد':u.birthYear,'تحصیلات':u.education,'نوع اشتغال':u.employment,'عنوان شغل':u.jobTitle||'','شهرستان':u.city,'توضیحات سکونت':u.cityDesc||'','آدای':u.isAdai||'','سرطایفه':u.sartaife||'','طایفه':u.tayefe||'','سرپرست خانوار':u.isFamilyHead?'بله':'خیر','نام سرپرست':u.familyHeadName||'','شماره موبایل':u.phone||'','مهارت فنی':(u.techSkills||[]).join(' | '),'مهارت ورزشی':(u.sportSkills||[]).join(' | '),'افتخارات':u.achievements||''}));
   const ws=XLSX.utils.json_to_sheet(data);
-  ws['!cols']=[{wch:12},{wch:12},{wch:15},{wch:12},{wch:14},{wch:8},{wch:10},{wch:14},{wch:16},{wch:16},{wch:16},{wch:20},{wch:8},{wch:14},{wch:12},{wch:16},{wch:14},{wch:30},{wch:30},{wch:40}];
+  ws['!cols']=[{wch:12},{wch:12},{wch:15},{wch:14},{wch:12},{wch:14},{wch:8},{wch:10},{wch:14},{wch:16},{wch:16},{wch:16},{wch:20},{wch:8},{wch:14},{wch:12},{wch:16},{wch:14},{wch:30},{wch:30},{wch:40}];
   const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'کاربران');
   XLSX.writeFile(wb,'qazakh_users_'+new Date().toISOString().slice(0,10)+'.xlsx');
   showToast('فایل اکسل دانلود شد','success');
 }
 function exportCSV(){
   const users=APP.adminUsersCache||[];if(!users.length){showToast('داده‌ای نیست','error');return}
-  const h=['کد ملی','نام','نام خانوادگی','نام پدر','نام پدربزرگ','جنسیت','سال تولد','تحصیلات','اشتغال','شغل','شهر','توضیحات','آدای','سرطایفه','طایفه','سرپرست','موبایل','مهارت فنی','مهارت ورزشی','افتخارات'];
-  const r=users.map(u=>[u.nationalId,u.firstName,u.lastName,u.fatherName,u.grandFatherName,u.gender,u.birthYear,u.education,u.employment,u.jobTitle,u.city,u.cityDesc,u.isAdai,u.sartaife,u.tayefe,u.isFamilyHead?'بله':'خیر',u.phone,(u.techSkills||[]).join('|'),(u.sportSkills||[]).join('|'),u.achievements||'']);
+  const h=['کد ملی','نام','نام خانوادگی','نام مستعار','نام پدر','نام پدربزرگ','جنسیت','سال تولد','تحصیلات','اشتغال','شغل','شهر','توضیحات','آدای','سرطایفه','طایفه','سرپرست','موبایل','مهارت فنی','مهارت ورزشی','افتخارات'];
+  const r=users.map(u=>[u.nationalId,u.firstName,u.lastName,u.nickname||'',u.fatherName,u.grandFatherName,u.gender,u.birthYear,u.education,u.employment,u.jobTitle,u.city,u.cityDesc,u.isAdai,u.sartaife,u.tayefe,u.isFamilyHead?'بله':'خیر',u.phone,(u.techSkills||[]).join('|'),(u.sportSkills||[]).join('|'),u.achievements||'']);
   const csv='\uFEFF'+[h,...r].map(r=>r.map(c=>'"'+(c||'')+'"').join(',')).join('\n');
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));a.download='qazakh_'+new Date().toISOString().slice(0,10)+'.csv';a.click();showToast('CSV دانلود شد','success');
 }
@@ -928,7 +1024,7 @@ async function renderAdminTree(c){
     }
     function renderLevel(node,depth){
       if(Array.isArray(node)){
-        return node.map(u=>`<div class="flex items-center justify-between py-1.5 px-3 rounded-lg hover:bg-bg/60 text-sm"><span>${u.firstName} ${u.lastName}<span class="text-muted text-xs mr-2">(${u.gender==='مرد'?'پسر':'دختر'} ${u.fatherName})</span></span><span class="badge ${u.isFamilyHead?'badge-gold':'badge-teal'}">${u.relationToHead||(u.isFamilyHead?'سرپرست':'—')}</span></div>`).join('');
+        return node.map(u=>`<div class="flex items-center justify-between py-1.5 px-3 rounded-lg hover:bg-bg/60 text-sm"><span>${u.firstName} ${u.lastName}${u.nickname?` <span class="text-gold">(${u.nickname})</span>`:''}<span class="text-muted text-xs mr-2">(${u.gender==='مرد'?'پسر':'دختر'} ${u.fatherName})</span></span><span class="badge ${u.isFamilyHead?'badge-gold':'badge-teal'}">${u.relationToHead||(u.isFamilyHead?'سرپرست':'—')}</span></div>`).join('');
       }
       const icons=['fa-mountain','fa-people-roof','fa-sitemap','fa-user-tie','fa-user'];
       return Object.keys(node).sort().map(key=>{
