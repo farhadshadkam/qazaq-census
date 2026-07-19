@@ -281,7 +281,7 @@ td{padding:8px 12px;border-bottom:1px solid #21262d;white-space:nowrap}tr:hover 
 const CONFIG={
   API_URL:'https://script.google.com/macros/s/AKfycbytxap1sObJTXolTFDfPXgMzIGJXIvKRxSWG5vgfCfsnDHc-NEJ5dAO97YNaOmdZhXW/exec' // مثال: https://script.google.com/macros/s/AKfycb.../exec
 };
-const FRONTEND_BUILD_TAG='2026-07-15-nickname-charts-filters-6'; // برای اطمینان از این‌که نسخه‌ی جدید فایل واقعاً روی سایت بارگذاری شده
+const FRONTEND_BUILD_TAG='2026-07-15-chart-sort-7'; // برای اطمینان از این‌که نسخه‌ی جدید فایل واقعاً روی سایت بارگذاری شده
 
 // ==================== وضعیت برنامه ====================
 let APP={currentView:'landing',tempPhone:'',tempNID:'',tempOTP:'',otpTimerInterval:null,otpPurpose:'register',
@@ -407,7 +407,7 @@ async function navigateTo(v){
     if(v==='otp')initOTPView();
     if(v==='verify')await initVerifyView();
     if(v==='register'){await ensureBootstrap();buildForm('register')}
-    if(v==='user-dashboard')await renderUserDashboard();
+    if(v==='user-dashboard'){await ensureBootstrap();await renderUserDashboard()}
     if(v==='edit-profile'){await ensureBootstrap();buildForm('edit')}
     if(v==='family-manage'){await ensureBootstrap();await renderFamilyManage()}
     if(v==='admin')await renderAdminPanel();
@@ -721,21 +721,26 @@ function renderChartsFromStats(cid,stats){
   const co={responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#8b949e',font:{family:'Vazirmatn',size:11}}}}};
   const bo={...co,scales:{x:{ticks:{color:'#8b949e',font:{family:'Vazirmatn',size:10}},grid:{color:'#21262d'}},y:{ticks:{color:'#8b949e',font:{family:'Vazirmatn'}},grid:{color:'#21262d'},beginAtZero:true}}};
   const po={...co,plugins:{...co.plugins,legend:{position:'bottom',labels:{color:'#8b949e',font:{family:'Vazirmatn',size:11},padding:12}}}};
-  // ترتیب صحیح گروه‌های سنی (نه بر اساس حروف الفبا)
+  // مرتب‌سازی پیش‌فرض همه‌ی نمودارها: از بیشترین به کمترین
+  const sortDesc=data=>Object.keys(data||{}).sort((a,b)=>(data[b]||0)-(data[a]||0));
+  // ترتیب صحیح گروه‌های سنی (زمانی، نه بر اساس تعداد)
   const ageOrder=Object.keys(stats.byAgeGroup||{}).sort((a,b)=>{
     const an=parseInt(a),bn=parseInt(b);
     if(isNaN(an))return 1;if(isNaN(bn))return -1;return an-bn;
   });
+  // ترتیب تحصیلات بر اساس رتبه‌ی مدرک (همان فهرستی که ادمین در «داده‌های پایه» چیده، از بالا به پایین)
+  const eduRanked=[...getEducations()].reverse().filter(e=>stats.byEducation[e]!==undefined);
+  Object.keys(stats.byEducation||{}).forEach(k=>{if(!eduRanked.includes(k))eduRanked.push(k)});
   const charts=[
-    {t:'سطح سرطایفه‌ها',id:'ch-st',type:'pie',data:stats.bySartaife},
-    {t:'نسبت جنسیت',id:'ch-gn',type:'pie',data:stats.byGender,colors:['#2ea58e','#d4a843']},
+    {t:'نسبت جنسیت',id:'ch-gn',type:'pie',data:stats.byGender,colors:['#2ea58e','#d4a843'],order:sortDesc(stats.byGender)},
     {t:'گروه‌های سنی (۵ ساله)',id:'ch-age',type:'bar',data:stats.byAgeGroup,order:ageOrder,vertical:true},
-    {t:'طایفه‌ها',id:'ch-ty',type:'bar',data:stats.byTayefe},
-    {t:'تحصیلات',id:'ch-ed',type:'bar',data:stats.byEducation},
-    {t:'اشتغال',id:'ch-em',type:'bar',data:stats.byEmployment},
-    {t:'مهارت فنی',id:'ch-tc',type:'bar',data:stats.byTechSkill},
-    {t:'مهارت ورزشی',id:'ch-sp',type:'bar',data:stats.bySportSkill},
-    {t:'شهرستان‌ها',id:'ch-ct',type:'bar',data:stats.byCity,vertical:true}
+    {t:'سرطایفه‌ها',id:'ch-st',type:'bar',data:stats.bySartaife,order:sortDesc(stats.bySartaife)},
+    {t:'طایفه‌ها',id:'ch-ty',type:'bar',data:stats.byTayefe,order:sortDesc(stats.byTayefe)},
+    {t:'تحصیلات (بر اساس رتبه‌ی مدرک)',id:'ch-ed',type:'bar',data:stats.byEducation,order:eduRanked},
+    {t:'اشتغال',id:'ch-em',type:'bar',data:stats.byEmployment,order:sortDesc(stats.byEmployment)},
+    {t:'مهارت فنی',id:'ch-tc',type:'bar',data:stats.byTechSkill,order:sortDesc(stats.byTechSkill)},
+    {t:'مهارت ورزشی',id:'ch-sp',type:'bar',data:stats.bySportSkill,order:sortDesc(stats.bySportSkill)},
+    {t:'شهرستان‌ها',id:'ch-ct',type:'bar',data:stats.byCity,order:sortDesc(stats.byCity),vertical:true}
   ];
   c.innerHTML=charts.map(ch=>{
     const n=Object.keys(ch.data||{}).length;
