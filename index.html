@@ -281,7 +281,7 @@ td{padding:8px 12px;border-bottom:1px solid #21262d;white-space:nowrap}tr:hover 
 const CONFIG={
   API_URL:'https://script.google.com/macros/s/AKfycbytxap1sObJTXolTFDfPXgMzIGJXIvKRxSWG5vgfCfsnDHc-NEJ5dAO97YNaOmdZhXW/exec' // مثال: https://script.google.com/macros/s/AKfycb.../exec
 };
-const FRONTEND_BUILD_TAG='2026-07-15-chart-sort-7'; // برای اطمینان از این‌که نسخه‌ی جدید فایل واقعاً روی سایت بارگذاری شده
+const FRONTEND_BUILD_TAG='2026-07-16-tayefe-sync-8'; // برای اطمینان از این‌که نسخه‌ی جدید فایل واقعاً روی سایت بارگذاری شده
 
 // ==================== وضعیت برنامه ====================
 let APP={currentView:'landing',tempPhone:'',tempNID:'',tempOTP:'',otpTimerInterval:null,otpPurpose:'register',
@@ -581,7 +581,7 @@ function buildForm(mode){
     <div><label class="block text-sm font-medium mb-2 text-muted">آیا از عشیره آدای هستید؟</label><div class="flex gap-3">${['بله','خیر'].map(g=>`<div class="radio-card flex-1 justify-center ${APP.selectedIsAdai===g?'selected':''}" onclick="pR(this,'isAdai','${g}');refST('${p}','${g}')"><div class="dot"></div><span class="text-sm">${g}</span></div>`).join('')}</div></div>
     <div id="${p}stWrap" style="display:${isAdaiAns==='بله'?'block':'none'}"><label class="block text-sm font-medium mb-2 text-muted">سرطایفه</label><div id="${p}stSel" class="flex flex-wrap gap-2">${filteredST.length?filteredST.map(s=>`<div class="chip ${selST===s?'selected':''}" onclick="pST('${p}','${s}')">${s}</div>`).join(''):'<span class="text-muted text-sm">ابتدا توسط ادمین تنظیم شود</span>'}</div></div>
     <div id="${p}tyC" style="display:${showTY?'block':'none'}"><label class="block text-sm font-medium mb-2 text-muted">طایفه</label><div id="${p}tySel" class="flex flex-wrap gap-2">${tayefes.map(t=>`<div class="chip ${APP.selectedTayefe===t?'selected':''}" onclick="pC(this,'tayefe','${t}')">${t}</div>`).join('')}</div></div>
-    <div id="${p}clanOther" style="display:${showOtherClan?'block':'none'}"><label class="block text-sm font-medium mb-1.5 text-muted">نام عشیره/طایفه خود را وارد کنید</label><input id="${p}CLO" class="input-field" value="${showOtherClan?selST:''}" oninput="APP.selectedSartaife=this.value"></div>
+    <div id="${p}clanOther" style="display:${showOtherClan?'block':'none'}"><label class="block text-sm font-medium mb-1.5 text-muted">نام عشیره/طایفه خود را وارد کنید</label><input id="${p}CLO" class="input-field" value="${showOtherClan?selST:''}" oninput="APP.selectedSartaife=this.value;APP.selectedTayefe=this.value"></div>
   </div></div>`;
 
   h+=`<button type="button" class="btn-gold w-full text-base py-3" onclick="${isEdit?'saveEdit()':'submitReg()'}"><i class="fas fa-save ml-2"></i>${isEdit?'ذخیره تغییرات':'ثبت نهایی'}</button>`;
@@ -798,7 +798,7 @@ async function addFamilyMember(){
         <div><label class="block text-xs text-muted mb-2">آیا از عشیره آدای است؟</label><div class="flex gap-3">${['بله','خیر'].map(g=>`<div class="radio-card flex-1 justify-center" onclick="pR(this,'isAdai','${g}');refST('fm','${g}')"><div class="dot"></div><span class="text-sm">${g}</span></div>`).join('')}</div></div>
         <div id="fmstWrap" style="display:none"><label class="block text-xs text-muted mb-2">سرطایفه</label><div id="fmstSel" class="flex flex-wrap gap-1"></div></div>
         <div id="fmtyC" style="display:none"><label class="block text-xs text-muted mb-2">طایفه</label><div id="fmtySel" class="flex flex-wrap gap-1"></div></div>
-        <div id="fmclanOther" style="display:none"><label class="block text-xs text-muted mb-1">نام عشیره/طایفه را وارد کنید</label><input id="fmCLO" class="input-field" oninput="APP.selectedSartaife=this.value"></div>
+        <div id="fmclanOther" style="display:none"><label class="block text-xs text-muted mb-1">نام عشیره/طایفه را وارد کنید</label><input id="fmCLO" class="input-field" oninput="APP.selectedSartaife=this.value;APP.selectedTayefe=this.value"></div>
       </div>
       <div><label class="block text-xs text-muted mb-2">مهارت فنی</label><div id="fmTC" class="flex flex-wrap gap-1">${techList.map(s=>`<div class="chip text-xs" onclick="this.classList.toggle('selected')">${s}</div>`).join('')}</div></div>
       <div><label class="block text-xs text-muted mb-2">مهارت ورزشی</label><div id="fmSP" class="flex flex-wrap gap-1">${sportList.map(s=>`<div class="chip text-xs" onclick="this.classList.toggle('selected')">${s}</div>`).join('')}</div></div>
@@ -853,7 +853,7 @@ async function editFM(id){
         <div><label class="block text-xs text-muted mb-2">آیا از عشیره آدای است؟</label><div class="flex gap-3">${['بله','خیر'].map(g=>`<div class="radio-card flex-1 justify-center ${APP.selectedIsAdai===g?'selected':''}" onclick="pR(this,'isAdai','${g}');refST('ef','${g}')"><div class="dot"></div><span class="text-sm">${g}</span></div>`).join('')}</div></div>
         <div id="efstWrap" style="display:${APP.selectedIsAdai==='بله'?'block':'none'}"><label class="block text-xs text-muted mb-2">سرطایفه</label><div id="efstSel" class="flex flex-wrap gap-1">${filteredST.map(s=>`<div class="chip text-xs ${APP.selectedSartaife===s?'selected':''}" onclick="pST('ef','${s}')">${s}</div>`).join('')}</div></div>
         <div id="eftyC" style="display:${tayefes.length?'block':'none'}"><label class="block text-xs text-muted mb-2">طایفه</label><div id="eftySel" class="flex flex-wrap gap-1">${tayefes.map(t=>`<div class="chip text-xs ${APP.selectedTayefe===t?'selected':''}" onclick="pC(this,'tayefe','${t}')">${t}</div>`).join('')}</div></div>
-        <div id="efclanOther" style="display:${APP.selectedIsAdai==='خیر'?'block':'none'}"><label class="block text-xs text-muted mb-1">نام عشیره/طایفه را وارد کنید</label><input id="efCLO" class="input-field" value="${APP.selectedIsAdai==='خیر'?APP.selectedSartaife:''}" oninput="APP.selectedSartaife=this.value"></div>
+        <div id="efclanOther" style="display:${APP.selectedIsAdai==='خیر'?'block':'none'}"><label class="block text-xs text-muted mb-1">نام عشیره/طایفه را وارد کنید</label><input id="efCLO" class="input-field" value="${APP.selectedIsAdai==='خیر'?APP.selectedSartaife:''}" oninput="APP.selectedSartaife=this.value;APP.selectedTayefe=this.value"></div>
       </div>
       <div><label class="block text-xs text-muted mb-2">مهارت فنی</label><div id="efTC" class="flex flex-wrap gap-1">${tl.map(s=>`<div class="chip text-xs ${(m.techSkills||[]).includes(s)?'selected':''}" onclick="this.classList.toggle('selected')">${s}</div>`).join('')}</div></div>
       <div><label class="block text-xs text-muted mb-2">مهارت ورزشی</label><div id="efSP" class="flex flex-wrap gap-1">${sl.map(s=>`<div class="chip text-xs ${(m.sportSkills||[]).includes(s)?'selected':''}" onclick="this.classList.toggle('selected')">${s}</div>`).join('')}</div></div>
@@ -916,6 +916,7 @@ async function renderAdminUsers(c){
         <div><label class="block text-xs text-muted mb-1">شهرستان</label><select id="fltCT" class="input-field" style="width:150px" onchange="filtAU()"><option value="">همه</option>${getCities().map(c=>`<option>${c}</option>`).join('')}</select></div>
         <div><label class="block text-xs text-muted mb-1">سرطایفه</label><input id="fltST" class="input-field" style="width:140px" placeholder="سرطایفه" oninput="filtAU()"></div>
         <div><label class="block text-xs text-muted mb-1">طایفه</label><input id="fltTY" class="input-field" style="width:140px" placeholder="طایفه" oninput="filtAU()"></div>
+        <div><label class="block text-xs text-muted mb-1">آدای</label><select id="fltAD" class="input-field" style="width:120px" onchange="filtAU()"><option value="">همه</option><option value="بله">آدای هست</option><option value="خیر">آدای نیست</option></select></div>
         <button class="btn-outline btn-sm" onclick="resetAUFilters()"><i class="fas fa-xmark ml-1"></i>پاک کردن فیلترها</button>
       </div>
       <div class="flex flex-wrap gap-2">
@@ -926,19 +927,21 @@ async function renderAdminUsers(c){
     c.innerHTML=h;filtAU();
   }catch(e){}
 }
-function resetAUFilters(){['fltFN','fltLN','fltST','fltTY'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});const ct=document.getElementById('fltCT');if(ct)ct.value='';filtAU()}
+function resetAUFilters(){['fltFN','fltLN','fltST','fltTY'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});const ct=document.getElementById('fltCT');if(ct)ct.value='';const ad=document.getElementById('fltAD');if(ad)ad.value='';filtAU()}
 function filtAU(){
   const fn=(document.getElementById('fltFN')?.value||'').trim().toLowerCase();
   const ln=(document.getElementById('fltLN')?.value||'').trim().toLowerCase();
   const ct=(document.getElementById('fltCT')?.value||'');
   const st=(document.getElementById('fltST')?.value||'').trim().toLowerCase();
   const ty=(document.getElementById('fltTY')?.value||'').trim().toLowerCase();
+  const ad=(document.getElementById('fltAD')?.value||'');
   let users=APP.adminUsersCache||[];
   if(fn)users=users.filter(u=>(u.firstName||'').toLowerCase().includes(fn));
   if(ln)users=users.filter(u=>(u.lastName||'').toLowerCase().includes(ln));
   if(ct)users=users.filter(u=>u.city===ct);
   if(st)users=users.filter(u=>(u.sartaife||'').toLowerCase().includes(st));
   if(ty)users=users.filter(u=>(u.tayefe||'').toLowerCase().includes(ty));
+  if(ad)users=users.filter(u=>u.isAdai===ad);
   const b=document.getElementById('aUB');if(!b)return;
   if(!users.length){b.innerHTML='<tr><td colspan="16" class="text-center text-muted py-8">یافت نشد</td></tr>';return}
   b.innerHTML=users.map((u,i)=>`<tr><td>${i+1}</td><td class="font-bold">${u.firstName} ${u.lastName}</td><td>${u.nickname||'—'}</td><td>${u.fatherName}</td><td>${u.grandFatherName||'—'}</td><td>${u.nationalId}</td><td dir="ltr">${u.phone||'—'}</td><td><span class="badge ${u.gender==='مرد'?'badge-teal':'badge-gold'}">${u.gender}</span></td><td>${u.education}</td><td>${u.employment}</td><td>${u.city}</td><td>${u.isAdai||'—'}</td><td>${u.sartaife||'—'}</td><td>${u.tayefe||'—'}</td><td>${u.isFamilyHead?'<span class="badge badge-gold">بله</span>':'خیر'}</td><td><div class="flex gap-1"><button class="btn-outline btn-sm" style="padding:4px 10px;font-size:11px" onclick="adminEU('${u.id}')"><i class="fas fa-edit"></i></button><button class="btn-danger btn-sm" style="padding:4px 10px;font-size:11px" onclick="adminDU('${u.id}')"><i class="fas fa-trash"></i></button></div></td></tr>`).join('');
